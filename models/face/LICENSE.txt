@@ -1,0 +1,2 @@
+InsightFace models are licensed under the MIT License.
+See https://github.com/deepinsight/insightface/blob/master/LICENSE for details.

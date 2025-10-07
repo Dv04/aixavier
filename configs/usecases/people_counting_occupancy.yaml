@@ -1,0 +1,28 @@
+metadata:
+  id: people_counting_occupancy
+  description: Track ingress/egress and live occupancy counts
+  severity: medium
+  frequency: real-time
+  domains: ["All", "Real-time"]
+detector: yolo_v8n
+tracker: bytetrack
+interval: 3
+rois:
+  - id: doorway
+    polygon: [[760,200],[1160,200],[1160,1080],[760,1080]]
+rules:
+  - type: counter
+    roi_id: doorway
+    classes: ["person"]
+    direction: both
+    report_interval_seconds: 30
+    occupancy_limit: 80
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/coach/occupancy"
+  rest_endpoint: "{{EVENTS_REST_ENDPOINT}}/occupancy"
+  dashboards:
+    - metric: occupancy_current
+      labels: {camera: CAM01}
+artifacts:
+  snapshot: false
+  csv: true

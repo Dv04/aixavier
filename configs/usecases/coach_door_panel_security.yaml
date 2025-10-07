@@ -1,0 +1,35 @@
+metadata:
+  id: coach_door_panel_security
+  description: Monitor coach doors and electrical panels for unauthorized access
+  severity: high
+  frequency: real-time
+  domains: ["Coach"]
+detector: yolo_v8n
+tracker: bytetrack
+interval: 2
+rois:
+  - id: door
+    polygon: [[200,100],[720,100],[720,960],[200,960]]
+  - id: panel
+    polygon: [[1200,200],[1800,200],[1800,860],[1200,860]]
+rules:
+  - type: zone_intrusion
+    roi_id: door
+    classes: ["person"]
+    dwell_seconds: 1
+    schedule: night
+  - type: zone_intrusion
+    roi_id: panel
+    classes: ["person"]
+    dwell_seconds: 1
+    allowed_roles: ["maintenance"]
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/coach/door"
+  rest_endpoint: "{{EVENTS_REST_ENDPOINT}}/door"
+  clip:
+    pre_seconds: 5
+    post_seconds: 10
+artifacts:
+  snapshot: true
+  clip: true
+  audit_tag: security

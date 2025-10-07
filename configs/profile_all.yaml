@@ -1,0 +1,48 @@
+profile: all
+camera_ids: [CAM01]
+usecases:
+  - trespassing_on_track
+  - stone_pelting
+  - camera_tampering
+  - people_counting_occupancy
+  - smoke_fire_haze
+  - object_identification_classification
+  - coach_door_panel_security
+  - medical_emergency_collapse
+  - staff_movement_tracking
+  - on_demand_viewing
+  - unattended_baggage
+  - human_aggression_violence
+  - passenger_falling_from_door
+  - face_recognition
+  - cleaning_hygiene_monitoring
+  - child_safety_monitoring
+  - vandalism_detection
+  - panic_alarm_validation
+  - calling_out_signal_aspect
+  - hand_gesture_signal_identification
+  - emergency_brake_valve_spad
+  - mobile_phone_usage_detection
+interval_overrides:
+  trespassing_on_track: 1
+  stone_pelting: 2
+  camera_tampering: 1
+  people_counting_occupancy: 3
+  smoke_fire_haze: 2
+  object_identification_classification: 2
+  coach_door_panel_security: 2
+  medical_emergency_collapse: 3
+  staff_movement_tracking: 2
+  on_demand_viewing: 3
+  unattended_baggage: 2
+  human_aggression_violence: 3
+  passenger_falling_from_door: 1
+  face_recognition: 2
+  cleaning_hygiene_monitoring: 5
+  child_safety_monitoring: 3
+  vandalism_detection: 3
+  panic_alarm_validation: 2
+  calling_out_signal_aspect: 2
+  hand_gesture_signal_identification: 2
+  emergency_brake_valve_spad: 1
+  mobile_phone_usage_detection: 2

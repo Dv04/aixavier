@@ -1,0 +1,1 @@
+OSNet_x0_25 is released under the MIT License. See https://github.com/KaiyangZhou/deep-person-reid/blob/master/LICENSE for the canonical text.

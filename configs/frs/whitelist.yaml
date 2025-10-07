@@ -1,0 +1,5 @@
+people:
+  - name: {{FRS_WHITELIST_NAME_01}}
+    role: crew
+    embedding: {{FRS_WHITELIST_EMBEDDING_01}}
+    expires_at: {{FRS_WHITELIST_EXPIRY_01}}

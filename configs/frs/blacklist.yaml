@@ -1,0 +1,5 @@
+people:
+  - name: {{FRS_BLACKLIST_NAME_01}}
+    reason: {{FRS_BLACKLIST_REASON_01}}
+    embedding: {{FRS_BLACKLIST_EMBEDDING_01}}
+    notify_roles: ["admin","security"]

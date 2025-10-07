@@ -1,0 +1,7 @@
+tracker: bytetrack
+confidence_threshold: 0.2
+iou_threshold: 0.3
+max_age: 30
+min_hits: 3
+embedding_engine: models/reid/engines/osnet_x0_25-fp16.engine
+reid_threshold: 0.4

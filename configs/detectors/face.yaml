@@ -1,0 +1,10 @@
+model: scrfd_500m
+engine_path: models/face/engines/scrfd_500m-fp16.engine
+embedding_engine: models/face/engines/arcface_mobilefacenet-fp16.engine
+precision: fp16
+input:
+  width: 320
+  height: 320
+batch_size: 1
+confidence_threshold: 0.3
+interval: 2

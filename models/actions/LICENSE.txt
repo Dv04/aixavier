@@ -1,0 +1,2 @@
+X3D models are released under the Apache 2.0 license by Facebook AI Research.
+See https://github.com/facebookresearch/pytorchvideo/blob/main/LICENSE for details.

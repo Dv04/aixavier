@@ -1,0 +1,24 @@
+metadata:
+  id: staff_movement_tracking
+  description: Track staff within designated zones using ReID
+  severity: medium
+  frequency: real-time
+  domains: ["Coach"]
+detector: yolo_v8n
+tracker: bytetrack
+interval: 2
+rois:
+  - id: staff_only
+    polygon: [[100,100],[1820,100],[1820,980],[100,980]]
+rules:
+  - type: zone_presence
+    roi_id: staff_only
+    classes: ["person"]
+    reid_whitelist: configs/frs/staff_whitelist.yaml
+    report_interval_seconds: 120
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/coach/staff"
+  dashboard_metric: staff_present_total
+artifacts:
+  csv: true
+  snapshot: false

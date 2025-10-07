@@ -1,0 +1,17 @@
+cameras:
+  - id: CAM01
+    name: Coach A Main Aisle
+    rtsp_url: "{{CAMERA_RTSP_URL_01}}"
+    onvif:
+      host: {{CAMERA_ONVIF_HOST_01}}
+      user: "{{CAMERA_ONVIF_USER}}"
+      pass: "{{CAMERA_ONVIF_PASS}}"
+    fps_limit: 25
+    retention_days: "{{RETENTION_DAYS}}"
+    tags: ["indoor", "coach"]
+    privacy:
+      nonmatch_blur: true
+      export_requires_approval: true
+    storage:
+      clips_path: "{{STORAGE_CLIPS_PATH}}/cam01"
+      export_path: "{{STORAGE_EXPORT_PATH}}/cam01"

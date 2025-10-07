@@ -1,0 +1,196 @@
+version: "3.9"
+
+x-common-env: &common-env
+  PROFILE: ${PROFILE:-demo}
+  PLACEHOLDER_RESOLVED: ${PLACEHOLDER_RESOLVED:-false}
+  PROMETHEUS_SCRAPE_PORT: ${PROMETHEUS_SCRAPE_PORT:-9100}
+  MQTT_BROKER_URL: ${MQTT_BROKER_URL:-mqtt://localhost:1883}
+  STORAGE_CLIPS_PATH: ${STORAGE_CLIPS_PATH:-/data/recordings}
+  STORAGE_EXPORT_PATH: ${STORAGE_EXPORT_PATH:-/data/exports}
+
+x-common-volumes: &common-volumes
+  - recordings:/data/recordings
+  - exports:/data/exports
+  - logs:/var/log/edge-cctv
+  - ./configs:/app/configs:ro
+  - ./docs:/app/docs:ro
+  - ./tests/data:/app/tests/data:ro
+
+services:
+  ingest:
+    build:
+      context: .
+      dockerfile: src/ingest_gst/Dockerfile
+    runtime: nvidia
+    environment:
+      <<: *common-env
+      CAMERA_CONFIG: /app/configs/cameras.yaml
+    volumes: *common-volumes
+    profiles: [all, demo]
+    depends_on:
+      - exporter
+    healthcheck:
+      test: ["CMD", "python", "-m", "ingest_gst.healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  detect_object:
+    build:
+      context: .
+      dockerfile: src/runners/Dockerfile.object
+    runtime: nvidia
+    environment:
+      <<: *common-env
+      DETECTOR_CONFIG: /app/configs/detectors/object.yaml
+    volumes: *common-volumes
+    profiles: [all, demo]
+    depends_on:
+      - ingest
+
+  detect_face:
+    build:
+      context: .
+      dockerfile: src/runners/Dockerfile.face
+    runtime: nvidia
+    environment:
+      <<: *common-env
+      DETECTOR_CONFIG: /app/configs/detectors/face.yaml
+    volumes: *common-volumes
+    profiles: [all, demo]
+    depends_on:
+      - ingest
+
+  detect_action:
+    build:
+      context: .
+      dockerfile: src/runners/Dockerfile.action
+    runtime: nvidia
+    environment:
+      <<: *common-env
+      DETECTOR_CONFIG: /app/configs/detectors/action.yaml
+    volumes: *common-volumes
+    profiles: [all]
+    depends_on:
+      - ingest
+
+  tracker:
+    build:
+      context: .
+      dockerfile: src/trackers/Dockerfile
+    runtime: nvidia
+    environment:
+      <<: *common-env
+      TRACKER_CONFIG: /app/configs/tracker.yaml
+    volumes: *common-volumes
+    profiles: [all, demo]
+    depends_on:
+      - detect_object
+
+  rules:
+    build:
+      context: .
+      dockerfile: src/rules/Dockerfile
+    environment:
+      <<: *common-env
+      RULES_DIR: /app/configs/usecases
+      PROFILE_CONFIG: /app/configs/profile_${PROFILE:-demo}.yaml
+    volumes: *common-volumes
+    profiles: [all, demo]
+    depends_on:
+      - tracker
+      - privacy
+
+  events:
+    build:
+      context: .
+      dockerfile: src/events/Dockerfile
+    environment:
+      <<: *common-env
+    volumes: *common-volumes
+    profiles: [all, demo]
+    depends_on:
+      - rules
+
+  privacy:
+    build:
+      context: .
+      dockerfile: src/privacy/Dockerfile
+    runtime: nvidia
+    environment:
+      <<: *common-env
+      FRS_THRESHOLD: ${FRS_THRESHOLD:-0.47}
+    volumes:
+      - embeddings:/app/data/embeddings
+      - audits:/app/data/audits
+      - ./configs/frs:/app/configs/frs:ro
+      - ./docs:/app/docs:ro
+    profiles: [all, demo]
+
+  recorder:
+    build:
+      context: .
+      dockerfile: src/recorder/Dockerfile
+    environment:
+      <<: *common-env
+    volumes: *common-volumes
+    profiles: [all, demo]
+    depends_on:
+      - ingest
+
+  ui:
+    build:
+      context: .
+      dockerfile: src/ui/Dockerfile
+    environment:
+      <<: *common-env
+      UI_HOST: ${UI_HOST:-0.0.0.0}
+      UI_PORT: ${UI_PORT:-8080}
+    volumes: *common-volumes
+    profiles: [all, demo]
+    ports:
+      - "${UI_PORT:-8080}:8080"
+    depends_on:
+      - events
+      - privacy
+      - recorder
+
+  exporter:
+    build:
+      context: .
+      dockerfile: src/exporter/Dockerfile
+    environment:
+      <<: *common-env
+    volumes: *common-volumes
+    profiles: [all, demo]
+    ports:
+      - "${PROMETHEUS_SCRAPE_PORT:-9100}:9100"
+
+  agent:
+    build:
+      context: .
+      dockerfile: src/agent/Dockerfile
+    environment:
+      <<: *common-env
+      GIT_AUTHOR_NAME: agent
+      GIT_AUTHOR_EMAIL: agent@example.com
+    profiles: [all]
+    depends_on:
+      - exporter
+
+  demo_rtsp:
+    build:
+      context: .
+      dockerfile: tests/data/Dockerfile
+    environment:
+      DEMO_SOURCE: /data/demo_stream.mp4
+    volumes:
+      - ./tests/data:/data
+    profiles: [demo]
+
+volumes:
+  recordings:
+  exports:
+  logs:
+  embeddings:
+  audits:

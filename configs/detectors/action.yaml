@@ -1,0 +1,13 @@
+model: x3d_s
+engine_path: models/actions/engines/x3d_s-fp16.engine
+precision: fp16
+clip_length: 16
+frame_stride: 2
+input:
+  width: 224
+  height: 224
+batch_size: 1
+thresholds:
+  violence: 0.6
+  fall: 0.55
+  medical_collapse: 0.55

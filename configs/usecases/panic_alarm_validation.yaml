@@ -1,0 +1,27 @@
+metadata:
+  id: panic_alarm_validation
+  description: Correlate panic button events with visual confirmation
+  severity: high
+  frequency: real-time
+  domains: ["Coach"]
+detector: yolo_v8n
+tracker: bytetrack
+interval: 2
+rules:
+  - type: external_signal
+    source: mqtt
+    topic: "{{MQTT_BROKER_URL}}/coach/panic_button"
+  - type: scene_activity
+    min_person_count: 1
+    aggression_threshold: 0.5
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/coach/panic_validation"
+  clip:
+    pre_seconds: 4
+    post_seconds: 8
+artifacts:
+  snapshot: true
+  clip: true
+  metadata:
+    - alarm_signal
+    - confirmation_confidence

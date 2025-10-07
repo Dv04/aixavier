@@ -1,0 +1,26 @@
+metadata:
+  id: mobile_phone_usage_detection
+  description: Detect loco pilots using mobile phones while on duty
+  severity: high
+  frequency: real-time + post
+  domains: ["Loco"]
+detector: yolo_v8n
+tracker: bytetrack
+interval: 2
+rules:
+  - type: class_presence
+    classes: ["mobile_phone"]
+    confidence_min: 0.45
+  - type: hand_to_face
+    dwell_seconds: 2
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/loco/mobile_phone"
+  clip:
+    pre_seconds: 4
+    post_seconds: 8
+artifacts:
+  snapshot: true
+  clip: true
+  attributes:
+    - confidence
+    - duration

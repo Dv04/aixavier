@@ -1,0 +1,4 @@
+* @edge-ai-admins
+configs/** @edge-config
+docs/** @edge-docs
+src/agent/** @edge-agent

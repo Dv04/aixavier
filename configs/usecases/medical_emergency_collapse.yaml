@@ -1,0 +1,28 @@
+metadata:
+  id: medical_emergency_collapse
+  description: Detect sudden collapse and prone posture
+  severity: critical
+  frequency: real-time
+  domains: ["Coach"]
+detector: pose_velocity
+tracker: bytetrack
+interval: 3
+rules:
+  - type: pose_velocity_drop
+    min_drop: 1.8
+    window_seconds: 1.2
+    followup_dwell_seconds: 4
+  - type: prone_dwell
+    min_duration_seconds: 5
+    max_height_px: 220
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/coach/medical"
+  clip:
+    pre_seconds: 8
+    post_seconds: 15
+artifacts:
+  snapshot: true
+  clip: true
+  attributes:
+    - velocity_drop
+    - prone_confidence

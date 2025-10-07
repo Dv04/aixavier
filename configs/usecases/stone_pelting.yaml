@@ -1,0 +1,31 @@
+metadata:
+  id: stone_pelting
+  description: Detect projectiles approaching locomotive windows
+  severity: high
+  frequency: post
+  domains: ["Loco", "Post"]
+detector: yolo_v8n
+tracker: bytetrack
+interval: 2
+rois:
+  - id: side_window
+    polygon: [[0,0],[1920,0],[1920,640],[0,640]]
+rules:
+  - type: high_velocity_object
+    roi_id: side_window
+    classes: ["rock", "unknown"]
+    min_speed_mps: 5
+    min_confidence: 0.4
+    evidence_frames: 6
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/loco/stone_pelting"
+  clip:
+    pre_seconds: 4
+    post_seconds: 8
+  forensic_bundle: true
+artifacts:
+  snapshot: true
+  clip: true
+  metadata:
+    window_id: loco_left
+    impact_angle: estimate

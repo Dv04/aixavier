@@ -1,0 +1,5 @@
+[Unit]
+Description=Edge CCTV multi-service target
+Requires=ingest.service detect.service ui.service
+After=docker.service
+AllowIsolate=yes

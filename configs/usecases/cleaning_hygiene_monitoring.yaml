@@ -1,0 +1,26 @@
+metadata:
+  id: cleaning_hygiene_monitoring
+  description: Ensure cleaning staff perform required actions and PPE usage
+  severity: medium
+  frequency: real-time + post
+  domains: ["Coach"]
+detector: yolo_v8n
+tracker: bytetrack
+interval: 5
+rois:
+  - id: cleaning_zone
+    polygon: [[0,300],[1920,300],[1920,1080],[0,1080]]
+rules:
+  - type: task_sequence
+    sequence: ["mop","wipe","trash"]
+    window_seconds: 600
+  - type: ppe_compliance
+    required: ["gloves","mask"]
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/coach/cleaning"
+  clip:
+    pre_seconds: 8
+    post_seconds: 12
+artifacts:
+  report: true
+  snapshot: false

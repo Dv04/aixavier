@@ -1,0 +1,31 @@
+metadata:
+  id: child_safety_monitoring
+  description: Alert if child is unattended or near hazardous zones
+  severity: high
+  frequency: real-time + post
+  domains: ["Coach"]
+detector: yolo_v8n
+tracker: bytetrack
+interval: 3
+rois:
+  - id: hazard_zone
+    polygon: [[200,600],[1720,600],[1720,1080],[200,1080]]
+rules:
+  - type: class_presence
+    classes: ["child"]
+    confidence_min: 0.4
+  - type: zone_intrusion
+    roi_id: hazard_zone
+    classes: ["child"]
+    dwell_seconds: 2
+  - type: unattended_child
+    guardian_distance_px: 220
+    dwell_seconds: 5
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/coach/child_safety"
+  clip:
+    pre_seconds: 6
+    post_seconds: 12
+artifacts:
+  snapshot: true
+  clip: true

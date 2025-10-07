@@ -1,0 +1,25 @@
+metadata:
+  id: calling_out_signal_aspect
+  description: Detect crew signaling correct aspect with hand gestures
+  severity: medium
+  frequency: real-time + post
+  domains: ["Loco"]
+detector: gesture
+tracker: bytetrack
+interval: 2
+rules:
+  - type: gesture_match
+    gestures: ["stop","proceed","caution"]
+    confidence_min: 0.55
+    require_audio_confirmation: false
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/loco/signal_aspect"
+  clip:
+    pre_seconds: 3
+    post_seconds: 6
+artifacts:
+  snapshot: true
+  clip: true
+  attributes:
+    - gesture_label
+    - confidence

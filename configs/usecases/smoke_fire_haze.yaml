@@ -1,0 +1,30 @@
+metadata:
+  id: smoke_fire_haze
+  description: Detect smoke, fire, or sudden haze reducing visibility
+  severity: critical
+  frequency: real-time
+  domains: ["All", "Real-time"]
+detector: fire_smoke
+tracker: bytetrack
+interval: 2
+rois:
+  - id: cabin
+    polygon: [[100,100],[1820,100],[1820,980],[100,980]]
+rules:
+  - type: class_presence
+    classes: ["fire", "smoke"]
+    confidence_min: 0.4
+    persistence_seconds: 1
+  - type: haze_index
+    roi_id: cabin
+    haze_threshold: 0.65
+    persistence_seconds: 4
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/common/fire"
+  rest_endpoint: "{{EVENTS_REST_ENDPOINT}}/fire"
+  clip:
+    pre_seconds: 10
+    post_seconds: 20
+artifacts:
+  snapshot: true
+  thermal_overlay: optional

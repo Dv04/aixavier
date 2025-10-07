@@ -1,0 +1,25 @@
+metadata:
+  id: on_demand_viewing
+  description: Enable operator-triggered recording with metadata stamping
+  severity: informational
+  frequency: real-time + post
+  domains: ["All"]
+detector: none
+tracker: none
+interval: 5
+rules:
+  - type: manual_trigger
+    command_channel: mqtt
+    command_topic: "{{MQTT_BROKER_URL}}/commands/on_demand"
+    default_duration_seconds: 60
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/alerts/on_demand"
+  clip:
+    pre_seconds: 10
+    post_seconds: 10
+artifacts:
+  clip: true
+  manifest: true
+  attributes:
+    - operator
+    - reason

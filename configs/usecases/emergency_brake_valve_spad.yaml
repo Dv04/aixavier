@@ -1,0 +1,31 @@
+metadata:
+  id: emergency_brake_valve_spad
+  description: Detect unauthorized emergency brake valve operation (SPAD)
+  severity: critical
+  frequency: real-time + post
+  domains: ["Loco"]
+detector: yolo_v8n
+tracker: bytetrack
+interval: 1
+rois:
+  - id: brake_valve
+    polygon: [[900,400],[1120,400],[1120,720],[900,720]]
+rules:
+  - type: hand_presence
+    roi_id: brake_valve
+    classes: ["hand"]
+    dwell_seconds: 1
+  - type: action_correlation
+    external_signal: "{{MQTT_BROKER_URL}}/loco/brake_status"
+    require_both: true
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/loco/spad"
+  clip:
+    pre_seconds: 6
+    post_seconds: 10
+artifacts:
+  snapshot: true
+  clip: true
+  metadata:
+    - brake_state
+    - operator

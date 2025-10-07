@@ -1,0 +1,26 @@
+metadata:
+  id: face_recognition
+  description: Match faces against secure embedding store
+  severity: medium
+  frequency: real-time + post
+  domains: ["All"]
+detector: scrfd_500m
+tracker: bytetrack
+interval: 2
+rules:
+  - type: frs_match
+    whitelist: configs/frs/whitelist.yaml
+    blacklist: configs/frs/blacklist.yaml
+    threshold: "{{FRS_THRESHOLD}}"
+    audit_log: /app/data/audits/frs_audit.log
+    blur_unmatched: true
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/common/frs"
+  rest_endpoint: "{{EVENTS_REST_ENDPOINT}}/frs"
+artifacts:
+  snapshot: true
+  clip: optional
+  attributes:
+    - matched_identity
+    - match_score
+    - role

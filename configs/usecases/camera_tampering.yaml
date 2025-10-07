@@ -1,0 +1,28 @@
+metadata:
+  id: camera_tampering
+  description: Detect blur, occlusion, or sudden scene change
+  severity: high
+  frequency: real-time
+  domains: ["All", "Real-time"]
+detector: tamper
+tracker: none
+interval: 1
+rules:
+  - type: brightness_drop
+    threshold: 0.6
+    duration_seconds: 2
+  - type: blur_detect
+    variance_threshold: 90
+    duration_seconds: 1
+  - type: scene_change
+    histogram_threshold: 0.75
+    duration_seconds: 1
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/common/tamper"
+  rest_endpoint: "{{EVENTS_REST_ENDPOINT}}/tamper"
+  clip:
+    pre_seconds: 2
+    post_seconds: 4
+artifacts:
+  snapshot: true
+  clip: optional

@@ -1,0 +1,7 @@
+model: yolov8n_pose
+engine_path: models/pose/engines/yolov8n-pose-fp16.engine
+precision: fp16
+input:
+  width: 640
+  height: 640
+interval: 3

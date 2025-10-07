@@ -1,0 +1,14 @@
+[Unit]
+Description=Edge CCTV ingest-gst service
+After=docker.service
+Requires=docker.service
+
+[Service]
+Restart=always
+RestartSec=5
+Environment=PROFILE=all
+ExecStart=/usr/bin/env bash -lc 'cd {{INSTALL_PREFIX}}/edge-cctv-jetson && PROFILE=${PROFILE} docker compose --profile all up ingest'
+ExecStop=/usr/bin/env bash -lc 'cd {{INSTALL_PREFIX}}/edge-cctv-jetson && docker compose stop ingest'
+
+[Install]
+WantedBy=edge-cctv.target

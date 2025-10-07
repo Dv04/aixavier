@@ -1,0 +1,7 @@
+model: efficientnet_b0_fire
+engine_path: models/actions/engines/x3d_s-fp16.engine
+precision: fp16
+input:
+  width: 224
+  height: 224
+interval: 2

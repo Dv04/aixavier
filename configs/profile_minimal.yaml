@@ -1,0 +1,8 @@
+profile: minimal
+camera_ids: [CAM01]
+usecases:
+  - camera_tampering
+  - trespassing_on_track
+interval_overrides:
+  camera_tampering: 1
+  trespassing_on_track: 1

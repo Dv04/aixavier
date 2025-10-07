@@ -1,0 +1,42 @@
+metadata:
+  id: trespassing_on_track
+  description: Detect pedestrians crossing forbidden track ROIs
+  severity: high
+  frequency: real-time
+  domains: ["Loco", "Post"]
+detector: yolo_v8n
+tracker: bytetrack
+interval: 1
+rois:
+  - id: track_zone
+    polygon: [[120,720],[900,360],[1280,360],[1820,720],[1820,1020],[120,1020]]
+lines:
+  - id: danger_line
+    points: [[200,880],[1820,880]]
+rules:
+  - type: line_crossing
+    line_id: danger_line
+    classes: ["person"]
+    direction: both
+    confidence_min: 0.35
+    cool_down_seconds: 15
+  - type: zone_intrusion
+    roi_id: track_zone
+    classes: ["person"]
+    dwell_seconds: 2
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/loco/trespass"
+  rest_endpoint: "{{EVENTS_REST_ENDPOINT}}/alerts"
+  clip:
+    pre_seconds: 6
+    post_seconds: 12
+artifacts:
+  snapshot: true
+  clip: true
+  attributes:
+    - track_id
+    - confidence
+    - speed
+post_actions:
+  - type: create_case
+    assignee: operations

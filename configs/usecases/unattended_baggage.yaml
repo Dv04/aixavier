@@ -1,0 +1,32 @@
+detector: yolo_v8n
+tracker: bytetrack
+metadata:
+  id: unattended_baggage
+  description: Detect bags left unattended beyond dwell threshold
+  severity: high
+  frequency: real-time + post
+  domains: ["Coach"]
+interval: 2
+rois:
+  - id: main_hall
+    polygon: [[120,80],[1820,80],[1820,980],[120,980]]
+rules:
+  - type: static_object_dwell
+    classes: ["bag","suitcase","backpack"]
+    dwell_seconds: 45
+    min_size_px: 600
+    confidence_min: 0.35
+  - type: owner_exit
+    track_match_window: 10
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/coach/unattended"
+  clip:
+    pre_seconds: 5
+    post_seconds: 10
+  forensic_bundle: true
+artifacts:
+  snapshot: true
+  clip: true
+  attributes:
+    - dwell_seconds
+    - last_owner_track

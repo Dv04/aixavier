@@ -1,0 +1,20 @@
+profile: demo
+camera_ids: [CAM01]
+usecases:
+  - camera_tampering
+  - people_counting_occupancy
+  - smoke_fire_haze
+  - unattended_baggage
+  - human_aggression_violence
+  - medical_emergency_collapse
+  - trespassing_on_track
+  - face_recognition
+interval_overrides:
+  camera_tampering: 1
+  people_counting_occupancy: 3
+  smoke_fire_haze: 2
+  unattended_baggage: 2
+  human_aggression_violence: 3
+  medical_emergency_collapse: 3
+  trespassing_on_track: 1
+  face_recognition: 2

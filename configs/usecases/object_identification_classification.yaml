@@ -1,0 +1,28 @@
+metadata:
+  id: object_identification_classification
+  description: Identify key railway assets (helmets, vests, tools)
+  severity: medium
+  frequency: real-time
+  domains: ["Coach", "Loco"]
+detector: yolo_v8n
+tracker: bytetrack
+interval: 2
+rois:
+  - id: workspace
+    polygon: [[200,200],[1720,200],[1720,920],[200,920]]
+rules:
+  - type: class_presence
+    classes: ["hard_hat","safety_vest","tool"]
+    confidence_min: 0.3
+  - type: missing_ppe
+    classes_required: ["hard_hat","safety_vest"]
+    actor_class: "person"
+    dwell_seconds: 5
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/coach/objects"
+  clip:
+    pre_seconds: 3
+    post_seconds: 6
+artifacts:
+  snapshot: true
+  json: true

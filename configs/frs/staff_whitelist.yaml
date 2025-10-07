@@ -1,0 +1,5 @@
+staff:
+  - name: {{FRS_STAFF_NAME_01}}
+    employee_id: {{FRS_STAFF_EMPLOYEE_ID_01}}
+    embedding: {{FRS_STAFF_EMBEDDING_01}}
+    rbac_role: operator

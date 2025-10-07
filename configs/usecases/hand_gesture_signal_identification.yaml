@@ -1,0 +1,25 @@
+metadata:
+  id: hand_gesture_signal_identification
+  description: Classify standardized railway hand signals
+  severity: medium
+  frequency: real-time + post
+  domains: ["Loco"]
+detector: gesture
+tracker: bytetrack
+interval: 2
+rules:
+  - type: gesture_match
+    gestures: ["halt","move","reverse","emergency"]
+    confidence_min: 0.6
+    sample_rate_hz: 5
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/loco/hand_gesture"
+  clip:
+    pre_seconds: 3
+    post_seconds: 6
+artifacts:
+  snapshot: true
+  clip: true
+  metadata:
+    - gesture_label
+    - operator_id

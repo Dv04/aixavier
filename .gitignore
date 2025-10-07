@@ -1,0 +1,41 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Editors
+.vscode/
+.idea/
+.DS_Store
+
+# Runtime artifacts
+logs/
+artifacts/
+exports/
+data/
+models/*/weights/
+models/*/engines/
+models/*/calib/
+!models/*/README.md
+!models/*/download.sh
+!models/*/export_trt.sh
+!models/*/calibrate.sh
+
+# Docker
+.env
+.env.production
+*.log
+
+# Tests
+coverage/
+pytest-cache/
+
+# Stream outputs
+recordings/
+metrics/
+cache/

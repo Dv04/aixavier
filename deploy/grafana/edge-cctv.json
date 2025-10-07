@@ -1,0 +1,28 @@
+{
+  "title": "Edge CCTV Health",
+  "schemaVersion": 39,
+  "description": "Jetson Xavier CCTV analytics observability",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Ingest FPS",
+      "targets": [{"expr": "ingest_fps"}],
+      "id": 1
+    },
+    {
+      "type": "graph",
+      "title": "Detector Latency (ms)",
+      "targets": [{"expr": "detect_latency_ms"}],
+      "id": 2
+    },
+    {
+      "type": "graph",
+      "title": "Event Count",
+      "targets": [{"expr": "event_count"}],
+      "id": 3
+    }
+  ],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "timezone": "browser"
+}

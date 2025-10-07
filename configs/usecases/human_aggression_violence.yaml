@@ -1,0 +1,26 @@
+metadata:
+  id: human_aggression_violence
+  description: Detect violent altercations via temporal classifier
+  severity: high
+  frequency: real-time + post
+  domains: ["All"]
+detector: x3d_s
+tracker: bytetrack
+interval: 3
+rules:
+  - type: action_score
+    label: violence
+    threshold: 0.6
+    persistence_seconds: 2
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/common/violence"
+  clip:
+    pre_seconds: 8
+    post_seconds: 12
+  rest_endpoint: "{{EVENTS_REST_ENDPOINT}}/violence"
+artifacts:
+  snapshot: true
+  clip: true
+  attributes:
+    - action_confidence
+    - participants

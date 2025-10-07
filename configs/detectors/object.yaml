@@ -1,0 +1,17 @@
+model: yolov8n
+engine_path: models/yolo/yolov8n-fp16.engine
+precision: fp16
+input:
+  width: 640
+  height: 640
+batch_size: 1
+confidence_threshold: 0.25
+nms_iou_threshold: 0.5
+interval: 1
+classes:
+  - person
+  - bag
+  - suitcase
+  - backpack
+  - fire
+  - smoke

@@ -1,0 +1,22 @@
+roles:
+  viewer:
+    description: read-only dashboard access
+    permissions:
+      - view_live
+      - view_events
+  operator:
+    description: enroll/delete faces with audit trail
+    permissions:
+      - view_live
+      - view_events
+      - enroll_face
+      - deactivate_face
+  admin:
+    description: full control, manage RBAC and exports
+    permissions:
+      - view_live
+      - view_events
+      - enroll_face
+      - deactivate_face
+      - export_artifacts
+      - manage_roles

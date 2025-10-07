@@ -1,0 +1,14 @@
+[Unit]
+Description=Edge CCTV UI service
+After=detect.service
+Requires=docker.service
+
+[Service]
+Restart=always
+RestartSec=5
+Environment=PROFILE=all
+ExecStart=/usr/bin/env bash -lc 'cd {{INSTALL_PREFIX}}/edge-cctv-jetson && PROFILE=${PROFILE} docker compose --profile all up ui'
+ExecStop=/usr/bin/env bash -lc 'cd {{INSTALL_PREFIX}}/edge-cctv-jetson && docker compose stop ui'
+
+[Install]
+WantedBy=edge-cctv.target

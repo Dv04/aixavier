@@ -1,0 +1,28 @@
+metadata:
+  id: vandalism_detection
+  description: Detect graffiti or damage on coach surfaces
+  severity: medium
+  frequency: real-time + post
+  domains: ["Coach","Loco"]
+detector: yolo_v8n
+tracker: bytetrack
+interval: 3
+rois:
+  - id: carriage_body
+    polygon: [[0,0],[1920,0],[1920,1080],[0,1080]]
+rules:
+  - type: spray_pose
+    arms_angle_threshold: 35
+    dwell_seconds: 2
+  - type: object_class
+    classes: ["spray_can","hammer"]
+    confidence_min: 0.35
+notifications:
+  mqtt_topic: "{{MQTT_BROKER_URL}}/coach/vandalism"
+  clip:
+    pre_seconds: 5
+    post_seconds: 10
+artifacts:
+  snapshot: true
+  clip: true
+  audit_tag: vandalism

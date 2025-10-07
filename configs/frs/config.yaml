@@ -1,0 +1,5 @@
+threshold: "{{FRS_THRESHOLD}}"
+embedding_store: /app/data/embeddings/embeddings.db
+encryption_key_env: SEC_EXPORT_ENCRYPTION_KEY
+embedding_ttl_days: 180
+audit_log: /app/data/audits/frs_audit.log
