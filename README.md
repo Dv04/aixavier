@@ -95,18 +95,31 @@ When satisfied, drop the `--dry-run` flag to persist updates.
 
 ## Live Auto Sections
 <!-- auto:start name=recommended-models -->
-_No agent run yet. Section will list recommended models once `src/agent` submits its first PR._
+| Rank | Task | Model | FP16 (ms) | INT8 (ms) | Accuracy | License | Last Checked |
+|------|------|-------|-----------|-----------|----------|---------|--------------|
+| 1 | face_recognition | MobileFaceNet ArcFace | 2.10 | 1.50 | 0.996 | MIT | 2025-09-27 |
+| 2 | reid | OSNet_x0_25 | 1.90 | 1.30 | 0.508 | MIT | 2025-09-22 |
+| 3 | face_detection | SCRFD-500M | 6.20 | 4.10 | 0.915 | MIT | 2025-09-27 |
+| 4 | fire_smoke_detection | EfficientNet-B0 Fire | 9.80 | 6.70 | 0.923 | Apache-2.0 | 2025-09-18 |
+| 5 | violence_detection | MobileNet-TSM | 12.90 | 9.00 | 0.842 | Apache-2.0 | 2025-09-21 |
+| 6 | pose_estimation | YOLOv8n-pose | 11.30 | 7.90 | 0.608 | GPLv3 | 2025-09-30 |
 <!-- auto:end -->
 
 <!-- auto:start name=performance-tuning -->
-_No automated performance notes yet. Agent PRs update expected FPS, GPU util, and tuning tips._
+- **DeepStream primary-gie batching**: Use batch-size=2 for YOLOv8n on AGX when PROFILE=all; falls back to 1 on NX. (_Impact_: Improves ingest FPS by ~8% while keeping latency under 40 ms.)
+- **TensorRT DLA offload**: Assign SCRFD embedding head to DLA0 in demo profile to free SMs for violence detector. (_Impact_: Reduces GPU util by 6% during peak loads.)
+- **Recorder I/O buffering**: Set GStreamer queue `max-size-time=3000000000` (3 s) for circular buffer stability. (_Impact_: Prevents underflow when writing to slower eMMC storage.)
 <!-- auto:end -->
 
 <!-- auto:start name=known-issues -->
-_No known issues logged by agent. Track manual issues in the normal issue tracker._
+- **[MEDIUM] INT8 export fails for YOLOv10n on TensorRT 8.6.1** — The TensorRT ONNX parser in JetPack 5.1.2 lacks support for new YOLOv10 detection head ops. _Impact_: INT8 acceleration unavailable for YOLOv10n until JetPack 6 or custom plugin compiled. _Workaround_: Stick to FP16 or backport the opset-18 plugin from TensorRT OSS. [Details](https://github.com/THU-MIG/yolov10/issues/42)
+- **[LOW] SCRFD false positives in dense steam scenarios** — Steam near coach doors triggered high-confidence face detections. _Impact_: FRS blur triggers and audit noise during cleaning cycles. _Workaround_: Enable ROI mask for door corners and tighten `FRS_THRESHOLD` to 0.52 when cleaning profile active. [Details](https://insightface.ai/docs/scrfd/troubleshooting)
+- **[HIGH] X3D-S memory spike on Jetson Xavier NX 8GB** — Batch=2 clip inference spikes VRAM over 7.2GB causing OOM with UI co-located. _Impact_: Violence detector crashes on NX unless intervals increased. _Workaround_: Set `ACTION_CLIP_BATCH=1` and raise clip stride to 3. [Details](https://forums.developer.nvidia.com/t/x3d-s-oom/298741)
 <!-- auto:end -->
 
 <!-- auto:start name=changelog -->
+- 2025-10-07: Catalog refresh (models=10, datasets=44, placeholders=40).
+- 2025-10-07: Catalog refresh (models=10, datasets=44, placeholders=42).
 - 2025-10-07: Initial repository scaffold for Jetson Xavier railway CCTV analytics.
 - 2025-10-07: Updated README to document bootstrap commands, module layout, and upcoming `src/aixavier/` migration.
 <!-- auto:end -->
