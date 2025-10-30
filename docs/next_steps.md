@@ -1,10 +1,14 @@
 # Next Steps – Aixavier Edge Analytics Stack
-_Date: 2025-10-29_
+_Date: 2025-10-31_
 
 ## TL;DR
-**Verdict:** The repo is **demo-ready** (synthetic pipeline works via `docker-compose` and `make demo`), but **not yet production-ready / deployable to real cameras**. Several components are stubs or simulations (detectors, tracker, recorder, exporter); secrets are unresolved ({42} placeholders), model bootstrap creates placeholders not real engines, and CI would fail the placeholder hygiene check.
+**Verdict:** The repo is **demo-ready** (object + pose services now run through the real detector pipeline with ONNX/TensorRT fallbacks) but **not yet production-ready / deployable to real cameras**. Other modalities (face, action) still use simulated emitters, secrets remain unresolved ({40} placeholders), model bootstrap creates placeholders not real engines, and CI would fail the placeholder hygiene check.
 
-What’s left is to replace simulated pieces with real implementations, resolve secrets, tighten CI, and complete privacy/recording paths for a compliant rollout.
+Recent work (2025-10-31):
+- Implemented configurable object detection runner (`src/runners/main.py`) with ONNX/TensorRT support and heuristic fallback.
+- Added pose detection wiring, docker-compose service, and artifact publishing.
+- Updated rule engine dwell logic and unit tests (`pytest` now passes).
+- Mounted `models/` into detector containers and created `models/usecases/` locker for production engines.
 
 ---
 
@@ -15,7 +19,7 @@ What’s left is to replace simulated pieces with real implementations, resolve 
 - Presence of placeholder secrets and placeholder-resolver tooling.
 
 ## Services & modules at a glance
-**Compose services (13):** ingest, detect_object, detect_face, detect_action, tracker, rules, events, privacy, recorder, ui, exporter, agent, demo_rtsp
+**Compose services (14):** ingest, detect_object, detect_pose, detect_face, detect_action, tracker, rules, events, privacy, recorder, ui, exporter, agent, demo_rtsp
 
 **Makefile targets:** agent:refresh, bootstrap, ci, clean, demo, format, help, lint, perf, placeholders:check, placeholders:list, placeholders:resolve, run, run-detached, stop, test
 
@@ -25,22 +29,24 @@ What’s left is to replace simulated pieces with real implementations, resolve 
 | agent | ✅ | ✅ | ✅ | — | Demo-ready (no tests) |
 | common | — | — | — | ✅ | Library |
 | events | ✅ | ✅ | ✅ | ✅ | Demo-ready |
-| exporter | ✅ | ✅ | ✅ | — | Demo-ready (no tests) |
-| ingest_gst | ✅ | ✅ | ✅ | — | Demo-ready (no tests) |
-| privacy | ✅ | ✅ | ✅ | — | Demo-ready (no tests) |
-| recorder | ✅ | ✅ | ✅ | — | Demo-ready (no tests) |
+| exporter | ✅ | ✅ | ✅ | — | Demo-ready (simulated metrics) |
+| ingest_gst | ✅ | ✅ | ✅ | — | Demo-ready (needs RTSP validation) |
+| privacy | ✅ | ✅ | ✅ | — | Demo-ready (simulated matching) |
+| recorder | ✅ | ✅ | ✅ | — | Demo-ready (JSON stubs) |
 | rules | ✅ | ✅ | ✅ | ✅ | Demo-ready |
-| runners | ✅ | ✅ | ✅ | — | Demo-ready (no tests) |
-| trackers | ✅ | ✅ | ✅ | — | Demo-ready (no tests) |
+| runners | ✅ | ✅ | ✅ | ✅ | Object/Pose operational; face/action simulated |
+| trackers | ✅ | ✅ | ✅ | ✅ | Demo-ready (SimpleTracker; upgrade to ByteTrack) |
 | ui | ✅ | ✅ | ✅ | ✅ | Demo-ready |
 
 Notes:
-- `runners` powers three services `detect_object`, `detect_face`, `detect_action` and currently **simulates** detections.
+- `runners` powers four services (`detect_object`, `detect_pose`, `detect_face`, `detect_action`); object/pose use the shared detector runtime, while face/action remain simulated.
+- `trackers` now assigns stable IDs via `SimpleTracker` (IoU-based); replace with ByteTrack + ReID when production ready.
 - `recorder` writes JSON artifacts, not video; `exporter` reports **simulated** metrics; `ui` is a minimal FastAPI API.
 - `ingest_gst` produces frames from synthetic/demo sources; RTSP/ONVIF capture paths are present but need validation on-device.
+- Production-ready TensorRT engines should be staged under `models/usecases/<use-case>/` and referenced from `configs/detectors/*.yaml` before shipping.
 
 ## Placeholder & secrets inventory
-- **Distinct placeholders:** **42**  
+- **Distinct placeholders:** **40**  
   (Run `make placeholders:list` and `make placeholders:check` to validate; current linter reports failures.)
 - Examples: CAMERA_ONVIF_HOST_01, CAMERA_ONVIF_PASS, CAMERA_ONVIF_USER, CAMERA_RTSP_URL_01, DATASET_PATH_FACE_CALIB, DATASET_PATH_FIRE_SMOKE, DATASET_PATH_OBJECT_CALIB, DATASET_PATH_POSE_CALIB, DATASET_PATH_REID_CALIB, DATASET_PATH_VIOLENCE, EVENTS_REST_ENDPOINT, FRS_BLACKLIST_EMBEDDING_01…
 
@@ -49,14 +55,14 @@ Notes:
 ## Gaps & recommended next steps (by area)
 
 ### P0 — Must-have to implement real deployments
-1. **Real detectors (TensorRT + DeepStream)**  
-   - Replace simulated emits in `src/runners/main.py` with model-backed inference for **object**, **face**, **action**, **pose**.  
-   - Wire runners to artifacts from `models/*/export_trt.sh` (or add a real downloader/builder in `models/bootstrap_models.py`, which currently writes placeholders).
+1. **Remaining detector modalities (TensorRT + DeepStream)**  
+   - Promote **face** and **action** detectors from simulation to model-backed inference.  
+   - Wire engines exported via `models/*/export_trt.sh` (and stage under `models/usecases/`) so docker services pick them up automatically.
 2. **Live ingest over RTSP/ONVIF**  
    - Validate `src/ingest_gst/pipeline.py` on Jetson (reconnects, FPS limiting, NVMM zero-copy).  
    - Confirm ONVIF time-sync and per-camera configs in `configs/cameras.yaml`.
 3. **Tracking**  
-   - Implement BYTETrack + optional OSNet ReID in `src/trackers/` (now pass‑through). Verify stable IDs across motion/occlusion.
+   - Implement BYTETrack + optional OSNet ReID in `src/trackers/` (currently pass-through). Verify stable IDs across motion/occlusion and ensure dwell/velocity rules use tracker timestamps.
 4. **Rules engine completeness**  
    - Finish all rule handlers in `src/rules/engine.py` (ROI, lines, dwell, velocity drop, trespass, action-score, etc.). Current tests cover basics only.  
    - Validate rulepack YAMLs under `configs/usecases/*.yaml` against real events.
@@ -164,6 +170,8 @@ Notes:
 
 ### Tests present
 - `tests/test_rules.py` — rule engine triggers  
+- `tests/test_tracker.py` — SimpleTracker lifecycle  
+- `tests/test_detectors.py` — ONNX/TensorRT output normalisation (skipped unless `AIXAVIER_ENABLE_NUMPY_TESTS=1`)  
 - `tests/test_perf.py` — metrics scrape parser  
 - `tests/test_rtsp_connect.sh` — RTSP connectivity smoke  
 (Overall test coverage is still low.)

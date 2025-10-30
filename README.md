@@ -29,6 +29,11 @@ Once the demo profile is healthy, switch to production profiles by exporting `PR
 | `make agent:refresh -- --dry-run` | Exercise the maintainer agent without mutating docs. |
 | `make clean` | Tear down compose services, remove the virtualenv, and clear caches. |
 
+### Model assets
+- Place development ONNX exports under `models/yolo/onnx/` and `models/pose/onnx/` if you want CPU-backed inference.
+- Promote production TensorRT engines (FP16/INT8) into `models/usecases/<use-case>/fp16|int8/` and update `configs/detectors/*.yaml` to match.
+- Run `models/bootstrap_models.py` to generate placeholder files when CI needs to stub missing assets.
+
 ## Runtime Profiles at a Glance
 | Profile | Focus | FPS Target | Notable Intervals |
 |---------|-------|------------|-------------------|
@@ -40,8 +45,8 @@ Select a profile by exporting `PROFILE=<name>` or passing `PROFILE=...` to indiv
 
 ## System Overview
 1. **Ingest (`src/ingest_gst/`)** – DeepStream-based RTSP/ONVIF ingestion with automatic reconnects, watermarks, and NVMM zero-copy paths.
-2. **Runners (`src/runners/`)** – TensorRT engines (FP16 baseline, INT8 optional) grouped by modality: object, face, pose, action, smoke, and violence.
-3. **Trackers (`src/trackers/`)** – BYTETrack with optional OSNet ReID features to maintain identities between frames.
+2. **Runners (`src/runners/`)** – TensorRT engines (FP16 baseline, INT8 optional) grouped by modality: object, face, pose, action, smoke, and violence. The shared detector runtime (`src/runners/detectors.py`) can fall back to ONNX/CPU inference when engines are absent, so you can validate pipelines before dropping production engines into `models/usecases/`.
+3. **Trackers (`src/trackers/`)** – currently a lightweight IoU-based `SimpleTracker` for stable IDs; upgrade to ByteTrack + ReID before production.
 4. **Rules (`src/rules/`)** – YAML-driven behavioural engine handling ROIs, dwell times, line crossings, and domain-specific semantics.
 5. **Privacy (`src/privacy/`)** – SCRFD + ArcFace inference, encrypted embeddings, RBAC checks, and audit logging.
 6. **Events (`src/events/`)** – Normalises detections, ships MQTT/REST payloads, and persists artefacts.
@@ -58,6 +63,7 @@ The refactor toward `src/aixavier/` will co-locate agents under `src/aixavier/ag
 - `deploy/` – Flash scripts, systemd units, Grafana dashboards, and logrotate configs.
 - `docs/` – Operational runbooks (`SETUP.md`, `PERFORMANCE.md`, `PRIVACY.md`, `TROUBLESHOOT.md`, etc).
 - `models/` – TensorRT engine builders and calibration scripts.
+- `models/usecases/` – drop-in folder for the 22 production-ready detection/pose engines (place FP16/INT8 artifacts here when promoting models).
 - `src/` – Runtime services and automation agent (pending relocation to `src/aixavier/`).
 - `tests/` – Pytest suites, fixtures, and RTSP connectivity scripts.
 - `tools/` – Placeholder resolvers, lint helpers, and release automation.
@@ -123,3 +129,4 @@ When satisfied, drop the `--dry-run` flag to persist updates.
 - 2025-10-07: Initial repository scaffold for Jetson Xavier railway CCTV analytics.
 - 2025-10-07: Updated README to document bootstrap commands, module layout, and upcoming `src/aixavier/` migration.
 <!-- auto:end -->
+- Detector post-processing unit tests rely on NumPy; set `AIXAVIER_ENABLE_NUMPY_TESTS=1` when that runtime is available.

@@ -4,6 +4,7 @@ This repository is being scaffolded for a collection of automation agents and su
 
 ## Project Structure & Module Organization
 - Keep runtime code in `src/aixavier/`, grouping agents under `src/aixavier/agents/` and shared abstractions under `src/aixavier/core/`.
+- Detector runtimes temporarily live under `src/runners/` (`detectors.py` hosts the shared inference loop); plan to relocate to `src/aixavier/vision/` during the refactor.
 - Place evaluation data, prompt templates, and fixtures in `assets/` with subfolders such as `assets/prompts/` and `assets/datasets/`.
 - Store documentation artifacts in `docs/` and diagrams in `docs/diagrams/`.
 - Co-locate smoke scripts or notebooks in `experiments/` but promote anything reusable into `src/`.
@@ -24,12 +25,15 @@ python -m build                                         # produce a distributabl
 - Run `black` (line length 100) and `ruff` before opening a pull request; configure editors to respect `.editorconfig`.
 - Modules follow snake_case (`memory_router.py`), classes use PascalCase (`MemoryRouter`), and functions/variables use snake_case (`route_message`).
 - Environment variables should be upper-case with underscores (`AGENT_TIMEOUT_SECONDS`) and defined in `.env.example`.
+- When wiring detectors, ensure ONNX exports are staged under `models/<modality>/onnx/` for CPU validation and TensorRT engines under `models/usecases/<use-case>/` before enabling CI.
+- Tracker utilities live in `src/trackers/bytetrack.py`; extend `SimpleTracker` or swap to full ByteTrack/ReID before productionization.
 
 ## Testing Guidelines
 - Prefer `pytest` test modules named `test_<subject>.py`; within each module, describe behaviors (`def test_memory_router_retries_on_timeout():`).
 - Add integration tests under `tests/integration/` when exercising external services or orchestrations.
 - Target ≥90% coverage on critical agent pathways; update `tests/README.md` with edge cases when introducing new tooling.
 - Use `pytest -k "<keyword>"` locally for focused runs and ensure CI passes before requesting review.
+- Detector post-process tests require NumPy; export `AIXAVIER_ENABLE_NUMPY_TESTS=1` when the runtime is available.
 
 ## Commit & Pull Request Guidelines
 - Adopt Conventional Commits from the outset (`feat: add planner agent skeleton`, `fix: tighten retry budget`); keep subject lines ≤72 characters.

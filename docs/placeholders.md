@@ -1,5 +1,7 @@
 # Placeholders Inventory
 
+_Current unresolved placeholders: 40 (see table below)._ The detector services now read engines/ONNX files from `models/usecases/` and `models/*/onnx/`; populate those paths and update this index as new model-specific secrets are introduced.
+
 <!-- auto:start name=placeholder-index -->
 | Placeholder | File path(s) | Purpose | Required format / regex | Example | Security level | Who provides | When required | Default | Resolution status | Last updated |
 |-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------|

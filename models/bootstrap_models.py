@@ -12,16 +12,16 @@ from pathlib import Path
 
 MODELS = {
     "object": {
-        "weights": "models/yolo/yolov8n.onnx",
-        "engine": "models/yolo/yolov8n-fp16.engine",
+        "weights": "models/yolo/onnx/yolov8n.onnx",
+        "engine": "models/yolo/engines/yolov8n-fp16.engine",
     },
     "face": {
         "weights": "models/face/scrfd_500m.onnx",
         "engine": "models/face/scrfd_500m-fp16.engine",
     },
     "pose": {
-        "weights": "models/pose/yolov8-pose.onnx",
-        "engine": "models/pose/yolov8-pose-fp16.engine",
+        "weights": "models/pose/onnx/yolov8n-pose.onnx",
+        "engine": "models/pose/engines/yolov8n-pose-fp16.engine",
     },
     "reid": {
         "weights": "models/reid/osnet_x0_25.onnx",

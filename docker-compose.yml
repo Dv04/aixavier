@@ -15,6 +15,7 @@ x-common-volumes: &common-volumes
   - ./configs:/app/configs:ro
   - ./docs:/app/docs:ro
   - ./tests/data:/app/tests/data:ro
+  - ./models:/app/models:ro
 
 services:
   ingest:
@@ -74,6 +75,19 @@ services:
     depends_on:
       - ingest
 
+  detect_pose:
+    build:
+      context: .
+      dockerfile: src/runners/Dockerfile.pose
+    runtime: nvidia
+    environment:
+      <<: *common-env
+      DETECTOR_CONFIG: /app/configs/detectors/pose_velocity.yaml
+    volumes: *common-volumes
+    profiles: [all, demo]
+    depends_on:
+      - ingest
+
   tracker:
     build:
       context: .
@@ -86,6 +100,7 @@ services:
     profiles: [all, demo]
     depends_on:
       - detect_object
+      - detect_pose
 
   rules:
     build:

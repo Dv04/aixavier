@@ -74,20 +74,27 @@ class RuleEngine:
         if event.get("type") != "object" or event.get("class") not in params.get("classes", []):
             return None
         key = f"{event.get('camera_id')}::{event.get('track_id')}"
-        now = event.get("timestamp", time.time())
-        dwell_seconds = params.get("dwell_seconds", 30)
+        event_ts = float(event.get("timestamp", time.time()))
+        wall_clock = time.time()
+        dwell_seconds = float(params.get("dwell_seconds", 30))
+        dwell_state = self.state.setdefault("dwell", {})
+
         if "first_seen" in event:
-            first_seen = float(event["first_seen"])
-            self.state.setdefault("dwell", {})[key] = first_seen
+            dwell_state[key] = float(event["first_seen"])
+        elif key not in dwell_state:
+            dwell_state[key] = min(event_ts, wall_clock)
         else:
-            first_seen = self.state.setdefault("dwell", {}).setdefault(key, now)
-        if now - first_seen >= dwell_seconds:
+            dwell_state[key] = min(float(dwell_state[key]), event_ts)
+
+        first_seen = float(dwell_state[key])
+        elapsed = max(event_ts, wall_clock) - first_seen
+        if elapsed >= dwell_seconds:
             return Event(
                 type=usecase.metadata["id"],
                 payload={
                     "camera_id": event.get("camera_id"),
                     "track_id": event.get("track_id"),
-                    "dwell_seconds": now - first_seen,
+                    "dwell_seconds": elapsed,
                     "confidence": event.get("confidence", 0.0),
                 },
             )

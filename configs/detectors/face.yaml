@@ -1,7 +1,11 @@
+task: simulation
+event_type: face
+simulation_class: face
 model: scrfd_500m
 engine_path: models/face/engines/scrfd_500m-fp16.engine
 embedding_engine: models/face/engines/arcface_mobilefacenet-fp16.engine
 precision: fp16
+publish_path: artifacts/detections/events.log
 input:
   width: 320
   height: 320
