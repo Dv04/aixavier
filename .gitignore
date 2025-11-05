@@ -39,3 +39,5 @@ pytest-cache/
 recordings/
 metrics/
 cache/
+*.onnx
+*.pth

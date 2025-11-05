@@ -34,6 +34,28 @@ Once the demo profile is healthy, switch to production profiles by exporting `PR
 - Promote production TensorRT engines (FP16/INT8) into `models/usecases/<use-case>/fp16|int8/` and update `configs/detectors/*.yaml` to match.
 - Run `models/bootstrap_models.py` to generate placeholder files when CI needs to stub missing assets.
 
+### Webcam smoke test
+```bash
+export CAMERA_RTSP_URL_01=webcam://0   # change index if you have multiple cameras
+make run PROFILE=demo                  # launches ingest + detectors using your webcam frames
+```
+The ingest service recognises `webcam://<index>` in `configs/cameras.yaml` (or `.env`). Use this to validate detections locally before pointing at RTSP/ONVIF streams.
+
+### Generating detector engines
+1. Export ONNX (if you haven’t already) and place it under `models/usecases/<use-case>/onnx/`.
+2. Convert to TensorRT FP16 on Jetson/x86 with TensorRT installed:
+   ```bash
+   trtexec \
+     --onnx=models/usecases/pose/rtmpose_onnx/.../end2end.onnx \
+     --saveEngine=models/usecases/pose/fp16/rtmpose.engine \
+     --fp16 --workspace=4096
+   trtexec \
+     --onnx=models/usecases/object_detection/onnx/yolov8n.onnx \
+     --saveEngine=models/usecases/object_detection/fp16/yolov8n.engine \
+     --fp16 --workspace=4096
+   ```
+3. Update `configs/detectors/object.yaml` / `configs/detectors/pose_velocity.yaml` if your filenames differ. Leave INT8 calibration for later (the scripts under `models/*/calibrate.sh` act as placeholders until we capture calibration sets).
+
 ## Runtime Profiles at a Glance
 | Profile | Focus | FPS Target | Notable Intervals |
 |---------|-------|------------|-------------------|
@@ -62,6 +84,7 @@ The refactor toward `src/aixavier/` will co-locate agents under `src/aixavier/ag
 - `configs/` – Profiles, rulepacks, camera definitions, and placeholder-friendly YAML.
 - `deploy/` – Flash scripts, systemd units, Grafana dashboards, and logrotate configs.
 - `docs/` – Operational runbooks (`SETUP.md`, `PERFORMANCE.md`, `PRIVACY.md`, `TROUBLESHOOT.md`, etc).
+- `docs/IMPLEMENTATION_STATUS.md` – Snapshot of current service/model progress for quick onboarding.
 - `models/` – TensorRT engine builders and calibration scripts.
 - `models/usecases/` – drop-in folder for the 22 production-ready detection/pose engines (place FP16/INT8 artifacts here when promoting models).
 - `src/` – Runtime services and automation agent (pending relocation to `src/aixavier/`).

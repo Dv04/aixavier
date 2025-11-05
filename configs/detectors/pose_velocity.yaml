@@ -1,12 +1,12 @@
 task: pose_detection
-model: yolov8n_pose
-engine_path: models/pose/engines/yolov8n-pose-fp16.engine
-onnx_path: models/pose/onnx/yolov8n-pose.onnx
+model: rtmpose_m
+engine_path: models/usecases/pose/fp16/rtmpose.engine
+onnx_path: models/usecases/pose/rtmpose_onnx/rtmpose-m_simcc-body7_pt-body7_420e-256x192-e48f03d0_20230504/end2end.onnx
 precision: fp16
 publish_path: artifacts/detections/events.log
 input:
-  width: 640
-  height: 640
+  width: 256
+  height: 192
 interval: 3
 confidence_threshold: 0.25
 nms_iou_threshold: 0.6

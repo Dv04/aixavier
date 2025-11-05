@@ -4,14 +4,18 @@ This directory is reserved for the deployable inference assets (TensorRT engines
 
 ```
 models/usecases/
-  ├─ object_detection/        # e.g., yolov8n / RT-DETR engines
-  ├─ pose_estimation/         # e.g., yolov8n-pose / RTMPose
-  ├─ face_recognition/        # SCRFD + ArcFace engines
-  ├─ reid/                    # OSNet embeddings
-  ├─ fire_smoke/              # EfficientNet-B0 fire/smoke detector
-  ├─ violence/                # X3D-S / MoViNet-A0/A2 engines
-  ├─ fall_detection/          # Pose velocity calibrations
-  ├─ ppe_compliance/          # PPE classifiers or detectors
+  ├─ object_detection/
+  │    ├─ fp16/   # e.g., yolov8n.engine
+  │    └─ onnx/   # ONNX export
+  ├─ pose/
+  │    ├─ fp16/
+  │    └─ rtmpose_onnx/
+  ├─ face_recognition/
+  ├─ reid/
+  ├─ fire_smoke/
+  ├─ violence/
+  ├─ fall_detection/
+  ├─ ppe_compliance/
   └─ ... (fill out all 22 use cases)
 ```
 
