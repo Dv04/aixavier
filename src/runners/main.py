@@ -5,22 +5,42 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 
 import cv2
+import numpy as np
 import yaml
 
-from trackers import SimpleTracker
+from src.trackers import TrackerManager
 
-from common.event_bus import Event, FileEventBus
+from src.common.event_bus import Event, FileEventBus
 from .detectors import BaseDetector, build_detector
+from .pose_assoc import associate_pose_tracks
+from .renderer import draw_hud, draw_pose
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s %(message)s")
 LOGGER = logging.getLogger("detector-runner")
 
 CACHE_DIR = Path("artifacts/detections/cache")
-TRACKERS: Dict[str, SimpleTracker] = {}
-POSE_TRACKERS: Dict[str, SimpleTracker] = {}
+FRAMES_LOG = Path(os.getenv("INGEST_FRAMES_LOG", "artifacts/ingest/frames.log"))
+SHOW_PREVIEW = os.getenv("LIVE_DEMO_SHOW", "").lower() in {"1", "true", "yes"}
+RECORD_PATH = os.getenv("LIVE_DEMO_RECORD")
+RECORD_FPS = float(os.getenv("LIVE_DEMO_RECORD_FPS", os.getenv("LIVE_DEMO_CAPTURE_FPS", "25")))
+PREVIEW_WINDOW = os.getenv("LIVE_DEMO_WINDOW_NAME", "Aixavier Pose Demo")
+OBJECT_TRACKERS = TrackerManager(
+    algorithm=os.getenv("TRACKER_ALGO", "bytetrack"),
+    high_thresh=float(os.getenv("TRACKER_HIGH_THRESH", "0.6")),
+    low_thresh=float(os.getenv("TRACKER_LOW_THRESH", "0.1")),
+    match_iou=float(os.getenv("TRACKER_MATCH_IOU", "0.3")),
+    max_age=int(os.getenv("TRACKER_MAX_AGE", "30")),
+)
+POSE_TRACKERS = TrackerManager(
+    algorithm=os.getenv("POSE_TRACKER_ALGO", "simple"),
+    high_thresh=float(os.getenv("POSE_TRACKER_HIGH_THRESH", "0.4")),
+    low_thresh=float(os.getenv("POSE_TRACKER_LOW_THRESH", "0.1")),
+    match_iou=float(os.getenv("POSE_TRACKER_MATCH_IOU", "0.2")),
+    max_age=int(os.getenv("POSE_TRACKER_MAX_AGE", "30")),
+)
 
 
 def stream_frames(path: Path) -> Iterable[Dict[str, object]]:
@@ -31,7 +51,10 @@ def stream_frames(path: Path) -> Iterable[Dict[str, object]]:
             continue
         with path.open("r", encoding="utf-8") as fh:
             fh.seek(offset)
-            for line in fh:
+            while True:
+                line = fh.readline()
+                if not line:
+                    break
                 offset = fh.tell()
                 if not line.strip():
                     continue
@@ -101,37 +124,23 @@ def load_object_cache(camera_id: str) -> List[Dict[str, object]]:
 
 
 def assign_pose_ids(camera_id: str, detections: List[Dict[str, object]]) -> List[Dict[str, object]]:
-    persons = [det for det in load_object_cache(camera_id) if (det.get("class") or "").lower() == "person"]
-    if not persons:
-        return detections
+    persons = [
+        det
+        for det in OBJECT_TRACKERS.latest_detections(camera_id)
+        if (det.get("class") or "").lower() == "person"
+    ]
+    return associate_pose_tracks(persons, detections)
 
-    def iou(a: List[float], b: List[float]) -> float:
-        ax1, ay1, ax2, ay2 = a
-        bx1, by1, bx2, by2 = b
-        inter_w = max(0.0, min(ax2, bx2) - max(ax1, bx1))
-        inter_h = max(0.0, min(ay2, by2) - max(ay1, by1))
-        inter = inter_w * inter_h
-        if inter <= 0:
-            return 0.0
-        area_a = max(0.0, (ax2 - ax1)) * max(0.0, (ay2 - ay1))
-        area_b = max(0.0, (bx2 - bx1)) * max(0.0, (by2 - by1))
-        return inter / (area_a + area_b - inter + 1e-6)
 
-    for pose in detections:
-        best_iou, best_track = 0.0, None
-        for person in persons:
-            person_bbox = person.get("bbox")
-            if not person_bbox:
-                continue
-            score = iou(person_bbox, pose.get("bbox", person_bbox))
-            if score > best_iou:
-                best_iou = score
-                best_track = person.get("track_id")
-                if person.get("first_seen") is not None:
-                    pose["first_seen"] = person.get("first_seen")
-        if best_track is not None and best_iou >= 0.1:
-            pose["track_id"] = best_track
-    return detections
+def cleanup_frame(path: str | Path | None, persist: bool) -> None:
+    if persist or not path:
+        return
+    try:
+        Path(path).unlink()
+    except FileNotFoundError:
+        return
+    except OSError as exc:
+        LOGGER.debug("Failed to delete frame %s: %s", path, exc)
 
 
 def run() -> None:
@@ -141,43 +150,103 @@ def run() -> None:
     publish_path = config.get("publish_path", "artifacts/detections/events.log")
     publish_dir = Path(publish_path)
     bus = FileEventBus(publish_dir.parent, filename=publish_dir.name)
-    log_path = Path("artifacts/ingest/frames.log")
+    log_path = FRAMES_LOG
     interval = int(config.get("interval", 1))
     frame_skip = 0
+    render_enabled = SHOW_PREVIEW or bool(RECORD_PATH)
+    writer: Optional[cv2.VideoWriter] = None
 
     LOGGER.info("Starting detector %s; publishing to %s", detector.__class__.__name__, publish_path)
 
-    for frame in stream_frames(log_path):
-        frame_skip = (frame_skip + 1) % interval
-        if frame_skip:
-            continue
-        frame_path = frame.get("path")
-        if not frame_path or not Path(frame_path).exists():
-            LOGGER.warning("Frame path %s missing; skipping frame.", frame_path)
-            continue
-        image = cv2.imread(str(frame_path))
-        if image is None:
-            LOGGER.warning("Failed to read frame %s; skipping.", frame_path)
-            continue
-        timestamp = float(frame.get("timestamp", time.time()))
-        camera_id = frame.get("camera_id", "CAM01")
-        detections = list(detector.detect(image))
-        for det in detections:
-            det.setdefault("first_seen", timestamp)
-            det.setdefault("timestamp", timestamp)
+    try:
+        for frame in stream_frames(log_path):
+            persist_frame = bool(frame.get("persist", True))
+            frame_path = frame.get("path")
+            frame_skip = (frame_skip + 1) % interval
+            if frame_skip:
+                cleanup_frame(frame_path, persist_frame)
+                continue
+            if not frame_path:
+                LOGGER.warning("Frame path missing; skipping frame.")
+                continue
+            path_obj = Path(frame_path)
+            if not path_obj.exists():
+                LOGGER.warning("Frame path %s missing; skipping frame.", frame_path)
+                cleanup_frame(frame_path, persist_frame)
+                continue
+            image = cv2.imread(str(path_obj))
+            if image is None:
+                LOGGER.warning("Failed to read frame %s; skipping.", frame_path)
+                cleanup_frame(frame_path, persist_frame)
+                continue
 
-        if detector.event_type == "object":
-            tracker = TRACKERS.setdefault(camera_id, SimpleTracker())
-            detections = tracker.update(detections)
-            update_object_cache(camera_id, timestamp, detections)
-        elif detector.event_type == "pose":
-            detections = assign_pose_ids(camera_id, detections)
-            tracker = POSE_TRACKERS.setdefault(camera_id, SimpleTracker())
-            detections = tracker.update(detections)
+            start = time.time()
+            timestamp = float(frame.get("timestamp", time.time()))
+            camera_id = frame.get("camera_id", "CAM01")
+            detections = list(detector.detect(image))
+            proc_time = time.time() - start
+            fps_est = 1.0 / proc_time if proc_time > 0 else 0.0
 
-        for idx, detection in enumerate(detections):
-            payload = build_event_payload(detector, frame, detection, idx)
-            bus.publish(Event(type=detector.event_type, payload=payload))
+            for det in detections:
+                det.setdefault("first_seen", timestamp)
+                det.setdefault("timestamp", timestamp)
+
+            if detector.event_type == "object":
+                detections = OBJECT_TRACKERS.update(camera_id, detections)
+                update_object_cache(camera_id, timestamp, detections)
+            elif detector.event_type == "pose":
+                detections = assign_pose_ids(camera_id, detections)
+                detections = POSE_TRACKERS.update(camera_id, detections)
+
+            vis_frame = None
+            if render_enabled:
+                vis_frame = image.copy()
+                if detector.event_type == "pose":
+                    for det in detections:
+                        keypoints = det.get("keypoints")
+                        if not keypoints:
+                            continue
+                        vis_frame = draw_pose(
+                            vis_frame,
+                            np.asarray(keypoints, dtype=np.float32),
+                            det.get("bbox"),
+                        )
+                hud_lines = [
+                    f"FPS={fps_est:.1f} frame={frame.get('frame_index', '-')}",
+                    f"detections={len(detections)} camera={camera_id}",
+                ]
+                vis_frame = draw_hud(vis_frame, hud_lines)
+
+            for idx, detection in enumerate(detections):
+                payload = build_event_payload(detector, frame, detection, idx)
+                bus.publish(Event(type=detector.event_type, payload=payload))
+
+            if SHOW_PREVIEW and vis_frame is not None:
+                cv2.imshow(PREVIEW_WINDOW, vis_frame)
+                if cv2.waitKey(1) & 0xFF == 27:
+                    raise KeyboardInterrupt
+
+            if RECORD_PATH and vis_frame is not None:
+                if writer is None:
+                    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+                    writer = cv2.VideoWriter(
+                        RECORD_PATH,
+                        fourcc,
+                        RECORD_FPS,
+                        (vis_frame.shape[1], vis_frame.shape[0]),
+                    )
+                    if not writer.isOpened():
+                        LOGGER.warning("Failed to open video writer at %s", RECORD_PATH)
+                        writer = None
+                if writer is not None:
+                    writer.write(vis_frame)
+
+            cleanup_frame(frame_path, persist_frame)
+    finally:
+        if writer is not None:
+            writer.release()
+        if SHOW_PREVIEW:
+            cv2.destroyWindow(PREVIEW_WINDOW)
 
 
 def main() -> None:

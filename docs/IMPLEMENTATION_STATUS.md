@@ -10,7 +10,7 @@ This document summarises the current state of the Aixavier Edge Analytics stack 
 | detect_object | `src/runners/` (config: `configs/detectors/object.yaml`) | ONNX/TRT-capable | Uses shared runner with ONNX fallback and SimpleTracker IDs; requires production engines. |
 | detect_pose | `src/runners/` (config: `configs/detectors/pose_velocity.yaml`) | ONNX/TRT-capable | Pose events aligned with object tracks via cached detections; needs real models. |
 | detect_face / detect_action | `src/runners/` | Simulated | Still emit synthetic events; promote to real inference later. |
-| tracker | `src/trackers/bytetrack.py` | SimpleTracker | IoU-based ID assignment; upgrade to ByteTrack + ReID. |
+| tracker | `src/trackers/` | ByteTrack-lite | ByteTrack-style matcher with Simple fallback; ReID still pending. |
 | rules | `src/rules/engine.py` | Demo-ready | Dwell logic fixed; other rule types awaiting real data. |
 | recorder | `src/recorder/` | Stub | Writes JSON; replace with video circular buffer. |
 | privacy | `src/privacy/` | Stub | Enrollment + embeddings need hardened store/RBAC. |

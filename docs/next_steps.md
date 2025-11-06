@@ -35,7 +35,7 @@ Recent work (2025-10-31):
 | recorder | ✅ | ✅ | ✅ | — | Demo-ready (JSON stubs) |
 | rules | ✅ | ✅ | ✅ | ✅ | Demo-ready |
 | runners | ✅ | ✅ | ✅ | ✅ | Object/Pose operational; face/action simulated |
-| trackers | ✅ | ✅ | ✅ | ✅ | Demo-ready (SimpleTracker; upgrade to ByteTrack) |
+| trackers | ✅ | ✅ | ✅ | ✅ | Demo-ready (ByteTrack-lite; add ReID later) |
 | ui | ✅ | ✅ | ✅ | ✅ | Demo-ready |
 
 Notes:
@@ -62,7 +62,7 @@ Notes:
    - Validate `src/ingest_gst/pipeline.py` on Jetson (reconnects, FPS limiting, NVMM zero-copy).  
    - Confirm ONVIF time-sync and per-camera configs in `configs/cameras.yaml`.
 3. **Tracking**  
-   - Implement BYTETrack + optional OSNet ReID in `src/trackers/` (currently pass-through). Verify stable IDs across motion/occlusion and ensure dwell/velocity rules use tracker timestamps.
+   - ByteTrack-lite is in place; next step is wiring OSNet ReID and validating long-term ID stability across cameras/occlusions.
 4. **Rules engine completeness**  
    - Finish all rule handlers in `src/rules/engine.py` (ROI, lines, dwell, velocity drop, trespass, action-score, etc.). Current tests cover basics only.  
    - Validate rulepack YAMLs under `configs/usecases/*.yaml` against real events.
@@ -170,11 +170,16 @@ Notes:
 
 ### Tests present
 - `tests/test_rules.py` — rule engine triggers  
-- `tests/test_tracker.py` — SimpleTracker lifecycle  
+- `tests/test_tracker.py` — SimpleTracker + ByteTrack-lite behaviours  
+- `tests/test_tracker_manager.py` — TrackerManager (ByteTrack/simple lifecycle)  
+- `tests/test_pose_assoc.py` — pose-to-person association logic  
+- `tests/test_event_bus.py` — FileEventBus enqueue/persist  
+- `tests/test_healthcheck.py` — ingest healthcheck success/failure  
+- `tests/test_exporter.py` — pose event counting (auto-skips if `prometheus_client` missing)  
 - `tests/test_detectors.py` — ONNX/TensorRT output normalisation (skipped unless `AIXAVIER_ENABLE_NUMPY_TESTS=1`)  
 - `tests/test_perf.py` — metrics scrape parser  
 - `tests/test_rtsp_connect.sh` — RTSP connectivity smoke  
-(Overall test coverage is still low.)
+(Overall test coverage is still low, but the most critical plumbing now has unit tests.)
 
 ## Quick “go / no‑go”
 - **Go for demo**: You can run `make demo` locally and see synthetic events flow through the stack.  

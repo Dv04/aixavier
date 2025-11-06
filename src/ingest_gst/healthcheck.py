@@ -4,7 +4,7 @@ import json
 import sys
 from pathlib import Path
 
-from common.config import ensure_dir
+from src.common.config import ensure_dir
 
 
 def main() -> None:

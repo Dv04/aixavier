@@ -4,6 +4,17 @@ VENV := .venv
 ACTIVATE := source $(VENV)/bin/activate
 PROFILE ?= demo
 ARGS ?= --dry-run
+CONFIG ?= configs/detectors/pose_velocity.yaml
+SRC ?= webcam:0
+OUTPUT ?= artifacts/live_demo
+CAMERA ?= CAM_WEB
+FPS ?= 25
+SAVE_FRAMES ?= 0
+LIVE_SAVE_FLAG := $(if $(filter 1 true TRUE yes YES,$(SAVE_FRAMES)),--save-frames,)
+SHOW ?= 0
+RECORD ?=
+LIVE_SHOW_FLAG := $(if $(filter 1 true TRUE yes YES,$(SHOW)),--show,)
+LIVE_RECORD_FLAG := $(if $(RECORD),--record $(RECORD),)
 
 .DEFAULT_GOAL := help
 
@@ -33,6 +44,9 @@ demo:
 
 perf:
 	$(ACTIVATE) && $(PYTHON) tests/test_perf.py --endpoint http://localhost:9100/metrics
+
+live:
+	$(ACTIVATE) && $(PYTHON) -m src.apps.live_demo --config $(CONFIG) --source $(SRC) --output $(OUTPUT) --camera-id $(CAMERA) --fps $(FPS) $(LIVE_SAVE_FLAG) $(LIVE_SHOW_FLAG) $(LIVE_RECORD_FLAG)
 
 clean:
 	docker compose down -v || true
@@ -64,4 +78,4 @@ format:
 
 ci: lint test placeholders\:check
 
-.PHONY: help bootstrap run run-detached stop demo perf clean lint test ci format placeholders\:list placeholders\:resolve placeholders\:check agent\:refresh
+.PHONY: help bootstrap run run-detached stop demo perf live clean lint test ci format placeholders\:list placeholders\:resolve placeholders\:check agent\:refresh

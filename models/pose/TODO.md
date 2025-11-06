@@ -1,14 +1,14 @@
 # Pose Detection TODO
 
 ## Owner: You
-- Gather/calibrate real pose datasets (`models/pose/calib/`) for INT8 export.
-- Export production TensorRT engines (FP16/INT8) into `models/usecases/pose_estimation/fp16|int8/`.
-- Collect validation clips and verify pose accuracy/latency on target Jetson hardware.
-- Swap the heuristic fallback for actual TRT inference in configs once engines are staged.
-- Tune velocity/fall detection thresholds against real video and update rule configs.
-- Smoke-test the detector with `CAMERA_RTSP_URL_01=webcam://0` before moving to RTSP feeds.
+- **Fix decoder**: Implement SimCC decoding for the RTMPose ONNX (two outputs: `simcc_x`, `simcc_y`) so keypoints are real rather than YOLO-style placeholders.
+- **Generate engines**: Convert the staged RTMPose ONNX to a TensorRT FP16 engine (`models/usecases/pose/fp16/rtmpose.engine`) and point `configs/detectors/pose_velocity.yaml` at it. Keep INT8 in backlog.
+- **Consistency sweep**: Decide on the canonical pose model (RTMPose-m vs YOLO-pose) and make config/input sizes match. Remove/rename leftover checkpoints to avoid confusion.
+- **Validation**: Capture webcam/RTSP clips, verify keypoints overlay correctly, and tune `confidence_threshold`, `nms_iou_threshold`, and rule parameters based on real footage.
+- **Calibration prep** (later): start collecting frames for `models/pose/calib/` to enable INT8 export once accuracy is locked in.
+- **Smoke test**: run `CAMERA_RTSP_URL_01=webcam://0` with the new engine to ensure the pipeline works before moving back to RTSP feeds.
 
 ## Owner: Assistant
-- Wire pose-to-person association to ByteTrack/ReID when the full tracker lands.
-- Add automated pose integration tests once production assets exist.
-- Extend exporter metrics to expose pose-specific latency/FPS once real pipelines run.
+- ✅ ByteTrack-lite manager in place; next step is wiring OSNet ReID once embeddings/models are available (leave placeholder in configs).
+- Add a regression test that loads the RTMPose ONNX/TRT engine, runs SimCC decode, and asserts K×3 keypoints on a known frame (after the decoder lands).
+- Extend exporter metrics further (per-model latency, queue depth) once real TRT engines are staged.

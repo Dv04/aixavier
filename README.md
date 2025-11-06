@@ -28,18 +28,42 @@ Once the demo profile is healthy, switch to production profiles by exporting `PR
 | `make lint` | Run ruff (lint) and mypy (type checks) over `src` and `tools`. |
 | `make agent:refresh -- --dry-run` | Exercise the maintainer agent without mutating docs. |
 | `make clean` | Tear down compose services, remove the virtualenv, and clear caches. |
+| `make live CONFIG=... SRC=...` | Run the local detector pipeline; spawns ingest + detector with your config/source (defaults to pose velocity + webcam). |
+| `SHOW=1 make live ...` | Same as above, but opens a preview window with pose overlays. |
+| `RECORD=artifacts/pose.mp4 make live ...` | Same as above, but records the annotated frames to MP4 (combine with `SHOW=1` if desired). |
 
 ### Model assets
 - Place development ONNX exports under `models/yolo/onnx/` and `models/pose/onnx/` if you want CPU-backed inference.
 - Promote production TensorRT engines (FP16/INT8) into `models/usecases/<use-case>/fp16|int8/` and update `configs/detectors/*.yaml` to match.
 - Run `models/bootstrap_models.py` to generate placeholder files when CI needs to stub missing assets.
 
+### Tracker configuration
+- ByteTrack-lite is enabled by default (`TRACKER_ALGO=bytetrack`). Override with `TRACKER_ALGO=simple` if you need the lightweight IoU tracker for debugging.
+- Pose trackers use `POSE_TRACKER_ALGO` (defaults to `simple`); set to `bytetrack` once you need tighter pose ID smoothing.
+- Additional knobs: `TRACKER_HIGH_THRESH`, `TRACKER_LOW_THRESH`, `TRACKER_MATCH_IOU`, `TRACKER_MAX_AGE` (and matching `POSE_TRACKER_*` variables).
+
 ### Webcam smoke test
+For a one-shot local run that wires up ingest + detectors automatically:
 ```bash
-export CAMERA_RTSP_URL_01=webcam://0   # change index if you have multiple cameras
-make run PROFILE=demo                  # launches ingest + detectors using your webcam frames
+make live SRC=webcam:0 CONFIG=configs/detectors/pose_velocity.yaml
 ```
-The ingest service recognises `webcam://<index>` in `configs/cameras.yaml` (or `.env`). Use this to validate detections locally before pointing at RTSP/ONVIF streams.
+Behind the scenes this command spawns `src.ingest_gst.main` with your chosen source (webcam, RTSP, file, or synthetic) and feeds frames to `src.runners.main`. Artifacts land under `artifacts/live_demo/` so you can inspect captured frames and emitted events. Override `OUTPUT`, `CAMERA`, or `FPS` when you need custom layouts.
+
+If you prefer using the docker-compose stack, you can still export `CAMERA_RTSP_URL_01=webcam://0` and run `make run PROFILE=demo` to test the full pipeline.
+
+Want a quick visual? Add `--show` (or `SHOW=1 make live ...`) to open an OpenCV window with skeleton overlays, or `--record artifacts/pose_demo.mp4` (or `RECORD=... make live ...`) to capture an annotated MP4 for sharing.
+
+To drive ingest manually (e.g., when you only want to capture frames/logs), use the new CLI flags:
+```bash
+python -m src.ingest_gst.main \
+  --source webcam:0 \
+  --output artifacts/ingest \
+  --log-path artifacts/ingest/frames.log \
+  --camera-id CAM_WEB
+```
+By default frames are ephemeral—the detector deletes them right after reading so your disk doesn’t fill up. Pass `--save-frames` if you genuinely need every JPEG persisted for later inspection. `--source` accepts `webcam:<index>`, `demo://synthetic`, RTSP URLs, or file paths; omit it to read from `configs/cameras.yaml` as before.
+
+Want persistent captures during `make live`? Just run `SAVE_FRAMES=1 make live ...`.
 
 ### Generating detector engines
 1. Export ONNX (if you haven’t already) and place it under `models/usecases/<use-case>/onnx/`.
@@ -68,7 +92,7 @@ Select a profile by exporting `PROFILE=<name>` or passing `PROFILE=...` to indiv
 ## System Overview
 1. **Ingest (`src/ingest_gst/`)** – DeepStream-based RTSP/ONVIF ingestion with automatic reconnects, watermarks, and NVMM zero-copy paths.
 2. **Runners (`src/runners/`)** – TensorRT engines (FP16 baseline, INT8 optional) grouped by modality: object, face, pose, action, smoke, and violence. The shared detector runtime (`src/runners/detectors.py`) can fall back to ONNX/CPU inference when engines are absent, so you can validate pipelines before dropping production engines into `models/usecases/`.
-3. **Trackers (`src/trackers/`)** – currently a lightweight IoU-based `SimpleTracker` for stable IDs; upgrade to ByteTrack + ReID before production.
+3. **Trackers (`src/trackers/`)** – ByteTrack-lite with optional fallback to `SimpleTracker`; pose IDs are associated to the latest person tracks. Wire in OSNet ReID for production deployments.
 4. **Rules (`src/rules/`)** – YAML-driven behavioural engine handling ROIs, dwell times, line crossings, and domain-specific semantics.
 5. **Privacy (`src/privacy/`)** – SCRFD + ArcFace inference, encrypted embeddings, RBAC checks, and audit logging.
 6. **Events (`src/events/`)** – Normalises detections, ships MQTT/REST payloads, and persists artefacts.

@@ -8,7 +8,7 @@ from typing import Iterator
 import cv2
 import numpy as np
 
-from common.config import ensure_dir
+from src.common.config import ensure_dir
 
 
 @dataclass
@@ -16,9 +16,10 @@ class Frame:
     index: int
     timestamp: float
     path: Path
+    persist: bool = False
 
 
-def synthetic_frames(output_dir: Path, fps: int = 25) -> Iterator[Frame]:
+def synthetic_frames(output_dir: Path, fps: int = 25, persist: bool = False) -> Iterator[Frame]:
     """Generate alternating color frames for demo mode."""
     ensure_dir(output_dir)
     frame_idx = 0
@@ -40,12 +41,12 @@ def synthetic_frames(output_dir: Path, fps: int = 25) -> Iterator[Frame]:
         ts = time.time()
         path = output_dir / f"frame_{frame_idx:06d}.jpg"
         cv2.imwrite(str(path), frame)
-        yield Frame(index=frame_idx, timestamp=ts, path=path)
+        yield Frame(index=frame_idx, timestamp=ts, path=path, persist=persist)
         frame_idx += 1
         time.sleep(1.0 / fps)
 
 
-def capture_rtsp(rtsp_url: str, output_dir: Path, fps_limit: int = 25) -> Iterator[Frame]:
+def capture_rtsp(rtsp_url: str, output_dir: Path, fps_limit: int = 25, persist: bool = False) -> Iterator[Frame]:
     """Capture frames from RTSP using OpenCV."""
     ensure_dir(output_dir)
     cap = cv2.VideoCapture(rtsp_url)
@@ -66,12 +67,12 @@ def capture_rtsp(rtsp_url: str, output_dir: Path, fps_limit: int = 25) -> Iterat
                 time.sleep(sleep_for)
         path = output_dir / f"frame_{frame_idx:06d}.jpg"
         cv2.imwrite(str(path), frame)
-        yield Frame(index=frame_idx, timestamp=ts, path=path)
+        yield Frame(index=frame_idx, timestamp=ts, path=path, persist=persist)
         frame_idx += 1
         last_ts = ts
 
 
-def capture_webcam(device_index: int, output_dir: Path, fps_limit: int = 25) -> Iterator[Frame]:
+def capture_webcam(device_index: int, output_dir: Path, fps_limit: int = 25, persist: bool = False) -> Iterator[Frame]:
     """Capture frames from a local webcam using OpenCV."""
     ensure_dir(output_dir)
     cap = cv2.VideoCapture(device_index)
@@ -92,6 +93,6 @@ def capture_webcam(device_index: int, output_dir: Path, fps_limit: int = 25) -> 
                 time.sleep(sleep_for)
         path = output_dir / f"frame_{frame_idx:06d}.jpg"
         cv2.imwrite(str(path), frame)
-        yield Frame(index=frame_idx, timestamp=ts, path=path)
+        yield Frame(index=frame_idx, timestamp=ts, path=path, persist=persist)
         frame_idx += 1
         last_ts = ts
