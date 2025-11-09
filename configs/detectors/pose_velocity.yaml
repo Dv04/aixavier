@@ -1,7 +1,7 @@
 task: pose_detection
 model: rtmpose_m
 engine_path: models/usecases/pose/fp16/rtmpose.engine
-onnx_path: models/usecases/pose/rtmpose_onnx/rtmpose-m_simcc-body7_pt-body7_420e-256x192-e48f03d0_20230504/end2end.onnx
+onnx_path: models/pose/onnx/rtmpose_onnx/rtmpose-m_simcc-body7_pt-body7_420e-256x192-e48f03d0_20230504/end2end.onnx
 precision: fp16
 publish_path: artifacts/detections/events.log
 input:

@@ -17,12 +17,87 @@ This document summarises the current state of the Aixavier Edge Analytics stack 
 | exporter | `src/exporter/` | Stub | Emits simulated metrics; wire to real telemetry. |
 | ui | `src/ui/` | Basic | FastAPI endpoints + Streamlit; requires full dashboard build-out. |
 
+## Use Case Catalog (22 total)
+
+Use-case metadata is tracked centrally in `assets/usecases/catalog.yaml` (auto-parsed from `All Data Analytics use cases for CCTV under POC.xlsx`) and wired into `src/aixavier/core/usecases.py`. The registry surfaces every workload, their applicability, and now feeds the rule engine + docs in a single place.
+
+### Stage Tracker
+
+| # | Use Case | Stage | Notes |
+|---|----------|-------|-------|
+| 1 | Trespassing on Railway Track | demo-ready | Uses object detector + ByteTrack in demo profile. |
+| 2 | Stone pelting | simulated | Needs action detector + projectile heuristics; current runner emits synthetic action events. |
+| 3 | Camera tampering | demo-ready | Blur/scene-change rules active via tamper detector. |
+| 4 | People Counting & Occupancy in Locomotives | demo-ready | Object detector + tracker cover threshold counts; needs calibration for real density. |
+| 5 | Smoke/Fire detection &  Haze / reduction in visibility detection | demo-ready | Object detector with placeholder smoke config; requires real fire/haze models. |
+| 6 | Object Identification and classify | planned | Requires banned-object classifier + rulepack tuning. |
+| 7 | Securing of Coach Doors and the electrical panels in the doorway area. | planned | Needs door state/geo-fencing inputs; no telemetry ingestion yet. |
+| 8 | Medical emergency detection in Circulation Area | demo-ready | Pose detector + velocity drop heuristics wired in demo profile. |
+| 9 | Railway Staff Movement (Security Patrol and maintenance staff including coach attendants) Detection during train operation | planned | Depends on ReID embeddings + tracker persistence (OSNet not wired). |
+| 10 | On demand viewing of cameras | planned | UI/exporter need live switching & secure proxy; only basic API exists. |
+| 11 | Unattended baggage detection in circulation area | demo-ready | Object dwell rule active; tune timers for real scenes. |
+| 12 | Human aggression or violence detection | simulated | Action detector simulated; X3D/MobileNet engines not integrated. |
+| 13 | Passenger falling from door in moving train | planned | Needs pose + action fusion with GPS speed gate; not wired. |
+| 14 | Face Recognition | partial | SCRFD/ArcFace pipeline stubbed; privacy service stores encrypted embeddings but matching logic limited. |
+| 15 | Cleaning & hygiene monitoring in Circulation Area | planned | Requires change-detection model + ROI config; not implemented. |
+| 16 | Child safety monitoring | planned | Needs child-specific tracker/dwell logic + guardian detection. |
+| 17 | Vandalism detection | planned | Needs change/action detectors + ROI masks; not implemented. |
+| 18 | Validation of Panic alarm | planned | Requires telemetry ingestion + camera correlation; not implemented. |
+| 19 | Calling (voice) out signal aspect | planned | Audio ingestion + ASR classifier missing. |
+| 20 | Hand gesture (for identification of signal) | simulated | Pose runner exists but gesture classifier not trained; rulepack placeholder. |
+| 21 | Emergency Brake Valve (RS value) operation during SPAD | planned | Needs telemetry + object recognition on cab cameras; not implemented. |
+| 22 | Mobile Phone Usage detection | simulated | Pose/gesture logic missing; action runner simulated. |
+
+**Snapshot:** 8/22 use cases produce demo events today, 5 rely on simulated detectors, and 9 remain in planning/backlog. Use `UseCaseRegistry().summary()` to pull this table programmatically during CI/tests.
+
+### Applicability / Detector View
+
+| # | Use Case | Applicability | Deployment | Maturity | Detectors |
+|---|----------|--------------|------------|----------|-----------|
+| 1 | Trespassing on Railway Track | Loco | Post Incident Need Based | demo-ready | object, tracker |
+| 2 | Stone pelting | Loco | Post Incident Need Based | planned | object, action |
+| 3 | Camera tampering | All | Real Time. | demo-ready | integrity |
+| 4 | People Counting & Occupancy in Locomotives | All | Real Time. | demo-ready | object, tracker |
+| 5 | Smoke/Fire detection &  Haze / reduction in visibility detection | All | Real Time. | demo-ready | environment, object |
+| 6 | Object Identification and classify | Coach and Locos | Real time. | planned | object |
+| 7 | Securing of Coach Doors and the electrical panels in the doorway area. | Coach | Real time. | planned | object, telemetry |
+| 8 | Medical emergency detection in Circulation Area | Coach | Real time. | demo-ready | pose |
+| 9 | Railway Staff Movement ... | Coach | Real time. | planned | reid, tracker |
+| 10 | On demand viewing of cameras | All | Both | planned | observability |
+| 11 | Unattended baggage detection in circulation area | Coach | Both | demo-ready | object, dwell |
+| 12 | Human aggression or violence detection | All | Both | planned | action |
+| 13 | Passenger falling from door in moving train | All | Real time. | planned | pose, action |
+| 14 | Face Recognition | All | Both | partial | frs |
+| 15 | Cleaning & hygiene monitoring in Circulation Area | Coach | Both | planned | object, change |
+| 16 | Child safety monitoring | Coach | Both | planned | tracker, dwell |
+| 17 | Vandalism detection | Coach and Locos | Both | planned | object, action |
+| 18 | Validation of Panic alarm | Coach | Real time. | planned | telemetry, object |
+| 19 | Calling (voice) out signal aspect | Loco | Both | planned | audio |
+| 20 | Hand gesture (for identification of signal) | Loco | Both | planned | pose, action |
+| 21 | Emergency Brake Value ... SPAD | Loco | Both | planned | object, telemetry |
+| 22 | Mobile Phone Usage detection | Loco | Both | planned | pose, action |
+
 ## Models & Assets
 
-- Place ONNX exports under `models/usecases/<use-case>/onnx/` (object) or `models/usecases/pose/rtmpose_onnx/` (pose) for CPU dev.
+- Place ONNX exports under modality folders (`models/object/onnx`, `models/pose/onnx/rtmpose_onnx`, `models/action/onnx`, etc.); promote TensorRT engines into `models/usecases/<use-case>/fp16|int8/` only when they are production-ready.
 - Stage production TensorRT engines under `models/usecases/<use-case>/fp16/` (INT8 later).
 - `models/pose/TODO.md` and `models/yolo/TODO.md` track outstanding work for the two active use cases.
 - Calibration datasets should live under `models/<modality>/calib/`.
+
+### Model Group Strategy
+
+Group shared models by analytic modality, keep raw ONNX/checkpoints beneath `models/<group>/`, and reserve `models/usecases/<slug>/` for deployable engines + INFO.md metadata. Recommended groups (covering both existing + future workloads):
+
+| Group | Folder | Use cases served | Notes |
+|-------|--------|-----------------|-------|
+| Object detection / tracking | `models/object/...` (ONNX) + shared tracker configs | 1,4,5,6,7,11,15,16,17,18,21 | Backed by YOLOv8/YOLOv10 exports; tracker tuned via `configs/tracker.yaml`. |
+| Pose & velocity | `models/pose/onnx/rtmpose_onnx/...` | 8,13,20,22 | RTMPose ONNX feeds TRT engines under `models/usecases/pose/`; shared SimCC decoder already implemented. |
+| Action / clip analytics | `models/action/onnx/...` | 2,12,13,17,20,22 | Hosts X3D-S, MobileNet-TSM, gesture classifiers. Current services still simulated—wire TRT engines + calibration here. |
+| Face / ReID | `models/face/...`, `models/reid/...` | 9,14 | SCRFD + ArcFace + OSNet_x0_25 assets live here; upgrade once production engines ready. |
+| Audio / ASR | `models/audio/...` | 19 | Placeholder for future speech-recognition weights used in calling-out-signal-aspect detection. |
+| Telemetry fusion helpers | `models/telemetry/...` (placeholder configs/scripts) | 7,18,21 | Holds ML models or rule scripts that combine vision with door/RS telemetry; currently empty but documented for future work. |
+
+Nothing needs to be deleted: keep existing `models/yolo`, `models/pose`, etc., and gradually migrate ONNX exports into the modality folders above. Only place fully vetted TensorRT engines (and their checksums/INFO.md) into `models/usecases/<slug>/`. This keeps the repo lightweight while still exposing a predictable locker for deployment artifacts.
 
 ## Tracking & Pose Association
 

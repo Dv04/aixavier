@@ -1,6 +1,6 @@
 # Placeholders Inventory
 
-_Current unresolved placeholders: 40 (see table below)._ The detector services now read engines/ONNX files from `models/usecases/` and `models/*/onnx/`; populate those paths and update this index as new model-specific secrets are introduced.
+_Current unresolved placeholders: 40 (see table below)._ Runtime metadata for all 22 analytics workloads now lives in `assets/usecases/catalog.yaml`, so no new placeholders were introduced for the registry. Detector services read ONNX files from the modality folders (`models/<modality>/onnx/...`) and promote TensorRT engines into `models/usecases/<use-case>/...`; populate those paths and update this index as new model-specific secrets are introduced.
 
 <!-- auto:start name=placeholder-index -->
 | Placeholder | File path(s) | Purpose | Required format / regex | Example | Security level | Who provides | When required | Default | Resolution status | Last updated |

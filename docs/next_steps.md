@@ -1,14 +1,14 @@
 # Next Steps – Aixavier Edge Analytics Stack
-_Date: 2025-10-31_
+_Date: 2025-11-09_
 
 ## TL;DR
-**Verdict:** The repo is **demo-ready** (object + pose services now run through the real detector pipeline with ONNX/TensorRT fallbacks) but **not yet production-ready / deployable to real cameras**. Other modalities (face, action) still use simulated emitters, secrets remain unresolved ({40} placeholders), model bootstrap creates placeholders not real engines, and CI would fail the placeholder hygiene check.
+**Verdict:** The repo is **demo-ready** for the eight workloads covered by the current detectors/rules and now carries a **single source of truth for all 22 analytics use cases** via the new manifest/registry. We are still **not production-ready**: face/action detectors stay simulated, secrets remain unresolved (40 placeholders), model bootstrap only creates placeholders, and CI would fail the placeholder hygiene gate.
 
-Recent work (2025-10-31):
-- Implemented configurable object detection runner (`src/runners/main.py`) with ONNX/TensorRT support and heuristic fallback.
-- Added pose detection wiring, docker-compose service, and artifact publishing.
-- Updated rule engine dwell logic and unit tests (`pytest` now passes).
-- Mounted `models/` into detector containers and created `models/usecases/` locker for production engines.
+Recent work (2025-11-09):
+- Parsed `All Data Analytics use cases for CCTV under POC.xlsx` into `assets/usecases/catalog.yaml` and surfaced it through `src/aixavier/core/usecases.py` so rules/tests/CLI can reason over all 22 workloads.
+- Taught `src/rules/engine.py` to hydrate metadata from the registry (complete with `summary()`), ensuring even unimplemented workloads appear in reports.
+- Updated docs and configs to pull ONNX weights from modality folders (`models/pose/onnx/...`) and kept TensorRT promotion under `models/usecases/<slug>/`.
+- Carried forward earlier detector-and-runner fixes (object + pose ONNX/TRT runtime) plus demo profile wiring.
 
 ---
 
@@ -17,6 +17,7 @@ Recent work (2025-10-31):
 - Configs under `configs/`, docs under `docs/`, deploy assets (`deploy/`), and Makefile targets.
 - Tests in `tests/` and CI workflows in `.github/workflows/`.
 - Presence of placeholder secrets and placeholder-resolver tooling.
+- `All Data Analytics use cases for CCTV under POC.xlsx` → generated manifest at `assets/usecases/catalog.yaml` and cross-checked that every slug matches the existing `configs/usecases/*.yaml` files.
 
 ## Services & modules at a glance
 **Compose services (14):** ingest, detect_object, detect_pose, detect_face, detect_action, tracker, rules, events, privacy, recorder, ui, exporter, agent, demo_rtsp
@@ -55,7 +56,10 @@ Notes:
 ## Gaps & recommended next steps (by area)
 
 ### P0 — Must-have to implement real deployments
-1. **Remaining detector modalities (TensorRT + DeepStream)**  
+1. **Bridge the 14 planned (non demo-ready) use cases surfaced by the registry**  
+   - Use `UseCaseRegistry.summary()` (or the table in `docs/IMPLEMENTATION_STATUS.md`) to track progress per slug.  
+   - Assign detector owners for audio (`calling_out_signal_aspect`), telemetry joiners (`coach_door_panel_security`, `panic_alarm_validation`, `emergency_brake_valve_spad`), and action/pose-heavy workloads (stone pelting, child safety, vandalism, mobile phone usage).
+2. **Remaining detector modalities (TensorRT + DeepStream)**  
    - Promote **face** and **action** detectors from simulation to model-backed inference.  
    - Wire engines exported via `models/*/export_trt.sh` (and stage under `models/usecases/`) so docker services pick them up automatically.
 2. **Live ingest over RTSP/ONVIF**  
@@ -75,7 +79,7 @@ Notes:
    - Replace simulated metrics with NVML/tegrastats readings, detector latency histograms, and per-camera FPS.  
    - Confirm Prometheus scrape on `PROMETHEUS_SCRAPE_PORT` and ship Grafana dashboard (`deploy/grafana/edge-cctv.json`).
 8. **Secrets & placeholders**  
-   - Resolve **all 42 placeholders** and commit only templates. Gate CI on `make placeholders:check`.
+   - Resolve **all 40 placeholders** and commit only templates. Gate CI on `make placeholders:check`.
 
 ### P1 — Quality, safety, & ops
 - **End-to-end tests on Xavier (AGX/NX)**: RTSP smoke (`tests/test_rtsp_connect.sh`) plus golden-event assertions for a few rulepacks.  
@@ -86,7 +90,7 @@ Notes:
 
 ### P2 — UX & docs
 - **UI**: Add ROI editor, live camera mosaic, rulepack toggles, and event browser.  
-- **Docs**: Flesh out `docs/SETUP.md`, `PRIVACY.md`, and `TROUBLESHOOT.md` with concrete JetPack/DeepStream versions and gotchas.  
+- **Docs**: Flesh out `docs/SETUP.md`, `PRIVACY.md`, and `TROUBLESHOOT.md` with concrete JetPack/DeepStream versions and gotchas, and keep `docs/IMPLEMENTATION_STATUS.md`/`assets/usecases/catalog.yaml` in sync when the spreadsheet changes.  
 - **README**: Replace the placeholder sections (auto blocks) after the maintainer agent writes first real tables.
 
 ## Evidence (auto-collected)

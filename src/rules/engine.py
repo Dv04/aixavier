@@ -9,6 +9,7 @@ from typing import Dict, List, Optional
 import yaml
 
 from common.event_bus import Event
+from aixavier.core.usecases import UseCaseRegistry, UseCaseDefinition
 
 
 @dataclass
@@ -21,23 +22,53 @@ class RuleConfig:
 class UseCase:
     metadata: Dict[str, str]
     rules: List[RuleConfig]
+    definition: Optional[UseCaseDefinition] = None
 
 
 class RuleEngine:
     """Evaluates configured rules on detection events."""
 
-    def __init__(self, configs_dir: Path):
-        self.usecases = self._load_usecases(configs_dir)
+    def __init__(self, configs_dir: Path, manifest_path: Optional[Path] = None):
+        self.configs_dir = Path(configs_dir)
+        manifest = manifest_path or Path("assets/usecases/catalog.yaml")
+        self.registry = UseCaseRegistry(manifest_path=manifest, configs_dir=self.configs_dir)
+        self.usecases = self._load_usecases(self.configs_dir)
         self.state: Dict[str, Dict[str, float]] = {}
 
     def _load_usecases(self, path: Path) -> Dict[str, UseCase]:
-        mapping: Dict[str, UseCase] = {}
+        raw_configs: Dict[str, Dict[str, object]] = {}
         for file in path.glob("*.yaml"):
-            data = yaml.safe_load(file.read_text(encoding="utf-8"))
-            metadata = data.get("metadata", {"id": file.stem})
+            data = yaml.safe_load(file.read_text(encoding="utf-8")) or {}
+            metadata = data.get("metadata", {})
+            slug = metadata.get("id", file.stem)
             rules = [RuleConfig(type=rule.pop("type"), params=rule) for rule in data.get("rules", [])]
-            mapping[metadata["id"]] = UseCase(metadata=metadata, rules=rules)
+            raw_configs[slug] = {"metadata": metadata, "rules": rules}
+
+        mapping: Dict[str, UseCase] = {}
+        for definition in self.registry.definitions:
+            payload = raw_configs.pop(definition.slug, {"metadata": {}, "rules": []})
+            metadata = self.registry.enrich_metadata(definition.slug, payload.get("metadata", {}))
+            rules = payload.get("rules", [])
+            mapping[definition.slug] = UseCase(metadata=metadata, rules=rules, definition=definition)
+
+        for slug, payload in raw_configs.items():
+            metadata = self.registry.enrich_metadata(slug, payload.get("metadata", {}))
+            mapping[slug] = UseCase(metadata=metadata, rules=payload.get("rules", []), definition=self.registry.get(slug))
+
         return mapping
+
+    def summary(self) -> Dict[str, Dict[str, object]]:
+        report: Dict[str, Dict[str, object]] = {}
+        for slug, usecase in self.usecases.items():
+            maturity = usecase.metadata.get(
+                "maturity",
+                usecase.definition.maturity if usecase.definition else "planned",
+            )
+            report[slug] = {
+                "rules": len(usecase.rules),
+                "maturity": maturity,
+            }
+        return report
 
     def evaluate(self, event: Dict[str, any]) -> List[Event]:
         """Evaluate event against all rules and return triggered events."""

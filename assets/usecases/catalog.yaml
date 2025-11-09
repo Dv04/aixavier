@@ -1,0 +1,315 @@
+source: All Data Analytics use cases for CCTV under POC.xlsx
+usecases:
+- id: 1
+  slug: trespassing_on_track
+  name: Trespassing on Railway Track
+  description: Validation of various instances of trespassing on railway property
+    during post-incident analysis—such as detecting MRO/CRO or unauthorized dumping
+    of garbage —can be conducted using front cameras mounted on locomotives. This
+    process can be enhanced through the use of video summarization and video forensic
+    tools.
+  applicability: Loco
+  deployment: Post Incident Need Based
+  detectors:
+  - object
+  - tracker
+  sensors:
+  - video
+  - gps
+  maturity: demo-ready
+- id: 2
+  slug: stone_pelting
+  name: Stone pelting
+  description: Post-event analysis utilizing track view and side view cameras along
+    with video summarization tools enables the assessment of individuals standing
+    near the railway tracks, as well as the evaluation of human body posture indicative
+    of stone pelting.
+  applicability: Loco
+  deployment: Post Incident Need Based
+  detectors:
+  - object
+  - action
+  sensors:
+  - video
+  maturity: planned
+- id: 3
+  slug: camera_tampering
+  name: Camera tampering
+  description: "The system shall generate an alert upon detecting any attempt to tamper\
+    \ with the CCTV camera under the following conditions:\n 1. Obstruction of the\
+    \ camera’s view\n 2. Movement or repositioning of the camera\n 3. Disconnection\
+    \ or loss of power to the camera\n 4. Image distortion, blurring, or degradation\n\
+    \ 5. Covering or tampering with the camera lens\n 6. Unauthorized access or configuration\
+    \ changes to the camera settings"
+  applicability: All
+  deployment: Real Time.
+  detectors:
+  - integrity
+  sensors:
+  - video
+  maturity: demo-ready
+- id: 4
+  slug: people_counting_occupancy
+  name: "People Counting & \nOccupancy in Locomotives"
+  description: 'Video analytics system shall detect any gathering of humans beyond
+    threshold count or can monitor density of people onboarded within locomotives.
+
+    System shall also detect the availability of Loco pilot / Asst. Loco pilot.'
+  applicability: All
+  deployment: Real Time.
+  detectors:
+  - object
+  - tracker
+  sensors:
+  - video
+  maturity: demo-ready
+- id: 5
+  slug: smoke_fire_haze
+  name: Smoke/Fire detection &  Haze / reduction in visibility detection
+  description: The video analytics system shall detect the presence of smoke or fire  or
+    haze / fog appears in front of camera and be adaptable for future training to
+    identify tobacco smoking by human.
+  applicability: All
+  deployment: Real Time.
+  detectors:
+  - environment
+  - object
+  sensors:
+  - video
+  maturity: demo-ready
+- id: 6
+  slug: object_identification_classification
+  name: Object Identification and classify
+  description: Using video analytics tool  system shall detect and alert when an object
+    is classified as banned or hazardous object such as Gas Cylinder, Stove, wood
+    log, etc. in the train.
+  applicability: Coach and Locos
+  deployment: Real time.
+  detectors:
+  - object
+  sensors:
+  - video
+  maturity: planned
+- id: 7
+  slug: coach_door_panel_security
+  name: Securing of Coach Doors and the electrical panels in the doorway area.
+  description: Using Video analytics and GPS data, the system shall generate an alert
+    when any door is left open during operation, after a predefined time interval
+    upon reaching the end destination (To check securing of doors) till the time it
+    enters a predefined geofence of the maintenance depot
+  applicability: Coach
+  deployment: Real time.
+  detectors:
+  - object
+  - telemetry
+  sensors:
+  - video
+  - gps
+  maturity: planned
+- id: 8
+  slug: medical_emergency_collapse
+  name: Medical emergency detection in Circulation Area
+  description: Video analytics system shall alert if any person collapses suddenly
+    in FOV (field of view) of camera.
+  applicability: Coach
+  deployment: Real time.
+  detectors:
+  - pose
+  sensors:
+  - video
+  maturity: demo-ready
+- id: 9
+  slug: staff_movement_tracking
+  name: Railway Staff Movement (Security Patrol and maintenance staff including coach
+    attendants) Detection during train operation
+  description: Using Facial Recognition as stated above it possible to track the movement
+    of railway staff.
+  applicability: Coach
+  deployment: Real time.
+  detectors:
+  - reid
+  - tracker
+  sensors:
+  - video
+  maturity: planned
+- id: 10
+  slug: on_demand_viewing
+  name: On demand viewing of cameras
+  description: The system shall provide on-demand access to live or real-time video
+    feeds, as well as recorded footage, from any camera installed on rolling stock.
+  applicability: All
+  deployment: Both
+  detectors:
+  - observability
+  sensors:
+  - video
+  - network
+  maturity: planned
+- id: 11
+  slug: unattended_baggage
+  name: Unattended baggage detection in circulation area
+  description: The system shall utilize video analytics and GPS data to generate alerts
+    when luggage or baggage is left unattended for a specified duration either the
+    train is in motion or stationary.
+  applicability: Coach
+  deployment: Both
+  detectors:
+  - object
+  - dwell
+  sensors:
+  - video
+  maturity: demo-ready
+- id: 12
+  slug: human_aggression_violence
+  name: Human aggression or violence detection
+  description: Video analytics system shall detect any Physical Violence  or aggression
+    behavior among passengers.
+  applicability: All
+  deployment: Both
+  detectors:
+  - action
+  sensors:
+  - video
+  maturity: demo-ready
+- id: 13
+  slug: passenger_falling_from_door
+  name: Passenger falling from door in moving train
+  description: Using video analytics and GPS data, the system shall generate an alert
+    when a passenger deboards or fall from a moving train. The threshold train speed
+    for triggering the alert shall be configurable by the user.
+  applicability: All
+  deployment: Real time.
+  detectors:
+  - pose
+  - action
+  sensors:
+  - video
+  - gps
+  maturity: planned
+- id: 14
+  slug: face_recognition
+  name: Face Recognition
+  description: "Use facial recognition tool to detect and identify the person of interest\
+    \ by comparing cropped face images with various watchlists / databases, for persons\
+    \ of interest like:\n 1. Railway Staff - TTE, Cleaning Staff, Security Personal,\
+    \ Coach attendant.\n 2. Unauthorized person in case of cab of Locomotive (post\
+    \ -event analytics)."
+  applicability: All
+  deployment: Both
+  detectors:
+  - frs
+  sensors:
+  - video
+  maturity: demo-ready
+- id: 15
+  slug: cleaning_hygiene_monitoring
+  name: Cleaning & hygiene monitoring in Circulation Area
+  description: Using video analytics tool  system shall detect and alert for cleanliness
+    and dustbin overflow when any change in frame at area of interest is  identified
+    .
+  applicability: Coach
+  deployment: Both
+  detectors:
+  - object
+  - change
+  sensors:
+  - video
+  maturity: planned
+- id: 16
+  slug: child_safety_monitoring
+  name: Child safety monitoring
+  description: Video analytics system shall alert if a child appears unattended for
+    long time.
+  applicability: Coach
+  deployment: Both
+  detectors:
+  - tracker
+  - dwell
+  sensors:
+  - video
+  maturity: planned
+- id: 17
+  slug: vandalism_detection
+  name: Vandalism detection
+  description: Using video analytics tool,the   system shall detect and alert for
+    vandalism when any change in frame at area of interest is  identified .
+  applicability: Coach and Locos
+  deployment: Both
+  detectors:
+  - object
+  - action
+  sensors:
+  - video
+  maturity: planned
+- id: 18
+  slug: panic_alarm_validation
+  name: Validation of Panic alarm
+  description: Validation of various alarms in FOV (Field of view) of camera through
+    on demand live viewing of camera.
+  applicability: Coach
+  deployment: Real time.
+  detectors:
+  - telemetry
+  - object
+  sensors:
+  - video
+  - network
+  maturity: planned
+- id: 19
+  slug: calling_out_signal_aspect
+  name: Calling(voice) out signal aspect
+  description: By utilizing audio recordings from microphones inside the locomotive
+    driver’s cab, the standardized verbal signals used to communicate signal aspects
+    can be analyzed during post-incident investigations.
+  applicability: Loco
+  deployment: Both
+  detectors:
+  - audio
+  sensors:
+  - audio
+  maturity: planned
+- id: 20
+  slug: hand_gesture_signal_identification
+  name: Hand gesture (for identification of signal)
+  description: During post-incident analysis, video analytics can be employed to observe
+    the standardized hand gestures used for identifying signal  aspect as captured
+    by the cab view camera.
+  applicability: Loco
+  deployment: Both
+  detectors:
+  - pose
+  - action
+  sensors:
+  - video
+  maturity: planned
+- id: 21
+  slug: emergency_brake_valve_spad
+  name: Emergency Brake Value (RS value) operation by ALP during Signal Passing at
+    Danger (SPAD) etc.
+  description: Video analytics combined with GPS data from the cab view camera can
+    be used to monitor whether the Assistant Loco Pilot (ALP) applies the emergency
+    brake during a SPAD (Signal Passed At Danger) event. If this condition occurs,
+    an alert should be generated immediately.
+  applicability: Loco
+  deployment: Both
+  detectors:
+  - object
+  - telemetry
+  sensors:
+  - video
+  - gps
+  maturity: planned
+- id: 22
+  slug: mobile_phone_usage_detection
+  name: Mobile Phone Usage detection
+  description: An alert shall be generated using video analytics and human gesture
+    recognition whenever the Loco Pilot (LP) or Assistant Loco Pilot (ALP) is observed
+    using a mobile phone.
+  applicability: Loco
+  deployment: Both
+  detectors:
+  - pose
+  - action
+  sensors:
+  - video
+  maturity: planned
