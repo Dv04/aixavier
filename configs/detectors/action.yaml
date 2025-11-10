@@ -2,7 +2,7 @@ task: simulation
 event_type: action
 simulation_class: violence
 model: x3d_s
-engine_path: models/actions/engines/x3d_s-fp16.engine
+engine_path: models/action/engines/x3d_s-fp16.engine
 precision: fp16
 clip_length: 16
 frame_stride: 2

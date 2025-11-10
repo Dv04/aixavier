@@ -33,7 +33,7 @@ Once the demo profile is healthy, switch to production profiles by exporting `PR
 | `RECORD=artifacts/pose.mp4 make live ...` | Same as above, but records the annotated frames to MP4 (combine with `SHOW=1` if desired). |
 
 ### Model assets
-- Place development ONNX exports under `models/yolo/onnx/` and `models/pose/onnx/` if you want CPU-backed inference.
+- Place development ONNX exports under `models/object/onnx/` and `models/pose/onnx/` if you want CPU-backed inference.
 - Promote production TensorRT engines (FP16/INT8) into `models/usecases/<use-case>/fp16|int8/` and update `configs/detectors/*.yaml` to match.
 - Run `models/bootstrap_models.py` to generate placeholder files when CI needs to stub missing assets.
 

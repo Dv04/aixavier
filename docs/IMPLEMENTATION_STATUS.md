@@ -81,7 +81,7 @@ Use-case metadata is tracked centrally in `assets/usecases/catalog.yaml` (auto-p
 
 - Place ONNX exports under modality folders (`models/object/onnx`, `models/pose/onnx/rtmpose_onnx`, `models/action/onnx`, etc.); promote TensorRT engines into `models/usecases/<use-case>/fp16|int8/` only when they are production-ready.
 - Stage production TensorRT engines under `models/usecases/<use-case>/fp16/` (INT8 later).
-- `models/pose/TODO.md` and `models/yolo/TODO.md` track outstanding work for the two active use cases.
+- `models/pose/TODO.md` and `models/object/TODO.md` track outstanding work for the two active use cases.
 - Calibration datasets should live under `models/<modality>/calib/`.
 
 ### Model Group Strategy
@@ -97,7 +97,7 @@ Group shared models by analytic modality, keep raw ONNX/checkpoints beneath `mod
 | Audio / ASR | `models/audio/...` | 19 | Placeholder for future speech-recognition weights used in calling-out-signal-aspect detection. |
 | Telemetry fusion helpers | `models/telemetry/...` (placeholder configs/scripts) | 7,18,21 | Holds ML models or rule scripts that combine vision with door/RS telemetry; currently empty but documented for future work. |
 
-Nothing needs to be deleted: keep existing `models/yolo`, `models/pose`, etc., and gradually migrate ONNX exports into the modality folders above. Only place fully vetted TensorRT engines (and their checksums/INFO.md) into `models/usecases/<slug>/`. This keeps the repo lightweight while still exposing a predictable locker for deployment artifacts.
+Nothing needs to be deleted: keep the modality folders (`models/object`, `models/pose`, `models/action`, `models/face`, `models/reid`, etc.) and gradually migrate ONNX exports into them. Only place fully vetted TensorRT engines (and their checksums/INFO.md) into `models/usecases/<slug>/`. This keeps the repo lightweight while still exposing a predictable locker for deployment artifacts.
 
 ## Tracking & Pose Association
 

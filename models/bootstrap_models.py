@@ -12,8 +12,8 @@ from pathlib import Path
 
 MODELS = {
     "object": {
-        "weights": "models/yolo/onnx/yolov8n.onnx",
-        "engine": "models/yolo/engines/yolov8n-fp16.engine",
+        "weights": "models/object/onnx/yolov8n.onnx",
+        "engine": "models/object/engines/yolov8n-fp16.engine",
     },
     "face": {
         "weights": "models/face/scrfd_500m.onnx",
@@ -28,8 +28,8 @@ MODELS = {
         "engine": "models/reid/osnet_x0_25-fp16.engine",
     },
     "violence": {
-        "weights": "models/actions/x3d_s.onnx",
-        "engine": "models/actions/x3d_s-fp16.engine",
+        "weights": "models/action/x3d_s.onnx",
+        "engine": "models/action/x3d_s-fp16.engine",
     },
 }
 

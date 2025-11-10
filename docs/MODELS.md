@@ -21,4 +21,4 @@ Manual notes:
 - Latency figures are measured on Jetson Xavier AGX in 30W mode with TensorRT 8.6; expect ±10% variance based on thermal budget.
 - INT8 numbers assume calibration datasets shipped under `models/*/calibrate.sh`.
 - Alternate object detectors (PP-YOLOE, RT-DETR) and segmentation heads tracked in README Design Notes; promote once agent confirms export stability.
-- The detector runtime can fall back to ONNX exports in `models/yolo/onnx/` and `models/pose/onnx/` when TensorRT engines are unavailable—useful for CPU validation before staging production engines under `models/usecases/`.
+- The detector runtime can fall back to ONNX exports in `models/object/onnx/` and `models/pose/onnx/` when TensorRT engines are unavailable—useful for CPU validation before staging production engines under `models/usecases/`.
