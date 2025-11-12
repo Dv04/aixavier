@@ -9,7 +9,12 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 import cv2
 import numpy as np
 
-from .postprocess import normalise_object_output, normalise_pose_output, nms, xywh_to_xyxy
+from .postprocess import (
+    normalise_object_output,
+    normalise_pose_output,
+    nms,
+    xywh_to_xyxy,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,17 +43,23 @@ def _sync_session_dims(session: Any, input_w: int, input_h: int) -> Tuple[int, i
     return inferred_w, inferred_h
 
 
-def letterbox(image: np.ndarray, new_shape: Tuple[int, int]) -> Tuple[np.ndarray, float, Tuple[int, int]]:
+def letterbox(
+    image: np.ndarray, new_shape: Tuple[int, int]
+) -> Tuple[np.ndarray, float, Tuple[int, int]]:
     """Resize image with unchanged aspect ratio using padding (YOLO-style)."""
     height, width = image.shape[:2]
     new_w, new_h = new_shape
     scale = min(new_w / width, new_h / height)
-    resized = cv2.resize(image, (int(width * scale), int(height * scale)), interpolation=cv2.INTER_LINEAR)
+    resized = cv2.resize(
+        image, (int(width * scale), int(height * scale)), interpolation=cv2.INTER_LINEAR
+    )
     top = int((new_h - resized.shape[0]) / 2)
     left = int((new_w - resized.shape[1]) / 2)
     canvas = np.full((new_h, new_w, 3), 114, dtype=np.uint8)
     canvas[top : top + resized.shape[0], left : left + resized.shape[1]] = resized
     return canvas, scale, (left, top)
+
+
 def load_onnx_session(model_path: Path) -> Optional[Any]:
     global _ORT
     if _ORT is None:
@@ -59,16 +70,28 @@ def load_onnx_session(model_path: Path) -> Optional[Any]:
         _ORT = ort_mod
 
     if _ORT is None:
-        LOGGER.warning("onnxruntime not available; falling back to heuristic detections.")
+        LOGGER.warning(
+            "onnxruntime not available; falling back to heuristic detections."
+        )
         return None
     if not model_path.exists():
-        LOGGER.warning("ONNX model %s not found; falling back to heuristic detections.", model_path)
+        LOGGER.warning(
+            "ONNX model %s not found; falling back to heuristic detections.", model_path
+        )
         return None
-    providers = ["CUDAExecutionProvider", "CPUExecutionProvider"] if "CUDAExecutionProvider" in _ORT.get_available_providers() else ["CPUExecutionProvider"]
+    providers = (
+        ["CUDAExecutionProvider", "CPUExecutionProvider"]
+        if "CUDAExecutionProvider" in _ORT.get_available_providers()
+        else ["CPUExecutionProvider"]
+    )
     try:
         return _ORT.InferenceSession(str(model_path), providers=providers)
     except Exception as exc:  # pragma: no cover - runtime specific
-        LOGGER.error("Failed to load ONNX model %s (%s); falling back to heuristic detections.", model_path, exc)
+        LOGGER.error(
+            "Failed to load ONNX model %s (%s); falling back to heuristic detections.",
+            model_path,
+            exc,
+        )
         return None
 
 
@@ -114,7 +137,9 @@ class ObjectDetector(BaseDetector):
             self.input_name = self.session.get_inputs()[0].name
         else:
             self.input_name = "images"
-        self.input_w, self.input_h = _sync_session_dims(self.session, self.input_w, self.input_h)
+        self.input_w, self.input_h = _sync_session_dims(
+            self.session, self.input_w, self.input_h
+        )
         self.frame_shape: Optional[Tuple[int, int]] = None
         LOGGER.info("Object detector ready; ONNX=%s", bool(self.session))
 
@@ -144,13 +169,19 @@ class ObjectDetector(BaseDetector):
         boxes /= scale
         keep = nms(boxes, conf, self.iou_thres)
         if self.max_det and len(keep) > self.max_det:
-            ranked = sorted(keep, key=lambda idx: conf[idx], reverse=True)[: self.max_det]
+            ranked = sorted(keep, key=lambda idx: conf[idx], reverse=True)[
+                : self.max_det
+            ]
             keep = ranked
         detections: List[Dict[str, Any]] = []
         for idx in keep:
             x1, y1, x2, y2 = boxes[idx]
             class_id = int(class_ids[idx])
-            class_name = self.classes[class_id] if class_id < len(self.classes) else str(class_id)
+            class_name = (
+                self.classes[class_id]
+                if class_id < len(self.classes)
+                else str(class_id)
+            )
             detections.append(
                 {
                     "bbox": [float(x1), float(y1), float(x2), float(y2)],
@@ -196,7 +227,9 @@ class PoseDetector(BaseDetector):
             self.input_name = self.session.get_inputs()[0].name
         else:
             self.input_name = "images"
-        self.input_w, self.input_h = _sync_session_dims(self.session, self.input_w, self.input_h)
+        self.input_w, self.input_h = _sync_session_dims(
+            self.session, self.input_w, self.input_h
+        )
         LOGGER.info("Pose detector ready; ONNX=%s", bool(self.session))
 
     def detect(self, image: np.ndarray) -> Iterable[Dict[str, Any]]:
@@ -204,7 +237,9 @@ class PoseDetector(BaseDetector):
             return self._detect_onnx(image)
         return self._detect_heuristic(image)
 
-    def _decode_simcc(self, simcc_x: Any, simcc_y: Any) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _decode_simcc(
+        self, simcc_x: Any, simcc_y: Any
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         if np is None:
             raise RuntimeError("numpy is required for pose detection")
         simcc_x = np.asarray(simcc_x)
@@ -220,7 +255,9 @@ class PoseDetector(BaseDetector):
         simcc_x = _prepare(simcc_x)
         simcc_y = _prepare(simcc_y)
         if simcc_x.shape[:2] != simcc_y.shape[:2]:
-            raise RuntimeError(f"SimCC heads mismatch: {simcc_x.shape} vs {simcc_y.shape}")
+            raise RuntimeError(
+                f"SimCC heads mismatch: {simcc_x.shape} vs {simcc_y.shape}"
+            )
 
         x_idx = np.argmax(simcc_x, axis=-1)
         y_idx = np.argmax(simcc_y, axis=-1)
@@ -279,7 +316,9 @@ class PoseDetector(BaseDetector):
         keypoints[:, :, :2] /= scale
         keep = nms(boxes, scores, self.iou_thres)
         if self.max_det and len(keep) > self.max_det:
-            keep = sorted(keep, key=lambda idx: scores[idx], reverse=True)[: self.max_det]
+            keep = sorted(keep, key=lambda idx: scores[idx], reverse=True)[
+                : self.max_det
+            ]
         results: List[Dict[str, Any]] = []
         for idx in keep:
             pts = keypoints[idx]
@@ -355,12 +394,86 @@ class SimulatedDetector(BaseDetector):
         ]
 
 
+# --- Face Detection & Recognition Stubs ---
+class FaceDetector(BaseDetector):
+    event_type = "face"
+
+    def __init__(self, config: Dict[str, Any]) -> None:
+        super().__init__(config)
+        self.input_w = int(config.get("input", {}).get("width", 640))
+        self.input_h = int(config.get("input", {}).get("height", 640))
+        self.conf_thres = float(config.get("confidence_threshold", 0.5))
+        onnx_path = config.get("onnx_path")
+        self.session = load_onnx_session(Path(onnx_path)) if onnx_path else None
+        self.input_name = (
+            self.session.get_inputs()[0].name if self.session else "images"
+        )
+        self.input_w, self.input_h = _sync_session_dims(
+            self.session, self.input_w, self.input_h
+        )
+        LOGGER.info("Face detector ready; ONNX=%s", bool(self.session))
+
+    def detect(self, image: np.ndarray) -> Iterable[Dict[str, Any]]:
+        if self.session:
+            # TODO: Implement ONNX inference for face detection
+            return []
+        # Simulate output for now
+        h, w = image.shape[:2]
+        return [
+            {
+                "bbox": [w * 0.3, h * 0.3, w * 0.7, h * 0.7],
+                "confidence": 0.6,
+                "class_id": 0,
+                "class": "face",
+            }
+        ]
+
+
+class FaceRecognitionDetector(BaseDetector):
+    event_type = "face_recognition"
+
+    def __init__(self, config: Dict[str, Any]) -> None:
+        super().__init__(config)
+        self.input_w = int(config.get("input", {}).get("width", 112))
+        self.input_h = int(config.get("input", {}).get("height", 112))
+        self.conf_thres = float(config.get("confidence_threshold", 0.5))
+        onnx_path = config.get("onnx_path")
+        self.session = load_onnx_session(Path(onnx_path)) if onnx_path else None
+        self.input_name = (
+            self.session.get_inputs()[0].name if self.session else "images"
+        )
+        self.input_w, self.input_h = _sync_session_dims(
+            self.session, self.input_w, self.input_h
+        )
+        LOGGER.info("Face recognition detector ready; ONNX=%s", bool(self.session))
+
+    def detect(self, image: np.ndarray) -> Iterable[Dict[str, Any]]:
+        if self.session:
+            # TODO: Implement ONNX inference for face recognition
+            return []
+        # Simulate output for now
+        h, w = image.shape[:2]
+        return [
+            {
+                "bbox": [w * 0.3, h * 0.3, w * 0.7, h * 0.7],
+                "confidence": 0.7,
+                "embedding": [0.0] * 512,
+                "class_id": 0,
+                "class": "face_recognition",
+            }
+        ]
+
+
 def build_detector(config: Dict[str, Any]) -> BaseDetector:
     task = (config.get("task") or "").lower()
     if task in {"object", "object_detection", "detection"}:
         return ObjectDetector(config)
     if task in {"pose", "pose_detection"}:
         return PoseDetector(config)
+    if task in {"face", "face_detection"}:
+        return FaceDetector(config)
+    if task in {"face_recognition", "frs"}:
+        return FaceRecognitionDetector(config)
     return SimulatedDetector(config)
 
 
@@ -369,5 +482,7 @@ __all__ = [
     "ObjectDetector",
     "PoseDetector",
     "SimulatedDetector",
+    "FaceDetector",
+    "FaceRecognitionDetector",
     "build_detector",
 ]

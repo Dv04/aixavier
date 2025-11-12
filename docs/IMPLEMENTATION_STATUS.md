@@ -107,10 +107,14 @@ Nothing needs to be deleted: keep the modality folders (`models/object`, `models
 - `SimpleTracker` assigns persistent IDs per camera and caches the latest object detections under `artifacts/detections/cache/<camera>.json`.
 - Pose detections reuse cached `person` boxes for track association; accuracy will improve once ByteTrack + ReID is added.
 
-## Tests
+## Tests & CI Gating
 
 - `pytest` suite covers rule engine, tracker, and (optionally) detector post-processing. Set `AIXAVIER_ENABLE_NUMPY_TESTS=1` when NumPy is available to enable ONNX layout tests.
 - Add integration tests once real models are staged.
+- **Placeholder hygiene is enforced in CI:**
+	- The placeholder linter (`tools/placeholder_lint.py`) and smoke test (`tests/test_placeholders_smoke.py`) ensure all secrets and placeholders are either resolved or documented in [`docs/placeholders.md`](docs/placeholders.md).
+	- The linter ignores `.venv/`, `site-packages`, and other non-project paths for reliability.
+	- CI will fail if unresolved placeholders or undocumented secrets are found.
 
 ## Outstanding Work (High Level)
 

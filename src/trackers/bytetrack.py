@@ -77,6 +77,9 @@ class ByteTrack:
                     reid_score = self.reid_engine.match(
                         det["embedding"], state.__dict__["embedding"]
                     )
+                    # Only match if similarity above threshold
+                    if reid_score < self.reid_engine.threshold:
+                        continue
                     score = max(score, reid_score)
                 if score > best_score:
                     best_score = score

@@ -27,7 +27,9 @@ ALLOWED_PREFIXES = {
 }
 EXEMPT_PREFIXES = {"PROMETHEUS_", "HANDOFF_"}
 DOC_TABLE = ROOT / "docs" / "placeholders.md"
-SECRET_PATTERN = re.compile(r"(?i)(apikey|secret|password)\s*[:=]\s*['\"]?[A-Za-z0-9/+=]{12,}")
+SECRET_PATTERN = re.compile(
+    r"(?i)(apikey|secret|password)\s*[:=]\s*['\"]?[A-Za-z0-9/+=]{12,}"
+)
 
 
 def scan_placeholders() -> Dict[str, Set[Path]]:
@@ -66,6 +68,20 @@ def check_prefix(name: str) -> bool:
 def detect_cleartext_secrets(paths: Iterable[Path]) -> List[str]:
     findings: List[str] = []
     for path in paths:
+        # Ignore .venv, site-packages, and other non-project dirs
+        parts = set(path.parts)
+        if any(
+            skip in parts
+            for skip in [
+                ".venv",
+                "site-packages",
+                "__pycache__",
+                "dist-info",
+                "bin",
+                "lib",
+            ]
+        ):
+            continue
         try:
             text = path.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
@@ -89,7 +105,10 @@ def main() -> None:
             fail = True
         wrapped = f"{{{{{name}}}}}"
         if wrapped not in docs_entries:
-            print(f"[ERROR] Placeholder {name} missing from docs/placeholders.md", file=sys.stderr)
+            print(
+                f"[ERROR] Placeholder {name} missing from docs/placeholders.md",
+                file=sys.stderr,
+            )
             fail = True
         for path in locations:
             if "docs" in path.parts and "placeholders.md" in path.name:

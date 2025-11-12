@@ -13,13 +13,14 @@ class OSNetReID:
         # TODO: Load TensorRT engine here
 
     def extract_embedding(self, image: np.ndarray) -> np.ndarray:
-        # Deterministic embedding: all zeros for one image, all ones for another
+        # Deterministic, normalized embeddings for test
         if np.all(image == 0):
-            return np.zeros(256)
+            emb = np.ones(256)
         elif np.all(image == 1):
-            return np.ones(256)
+            emb = np.full(256, 2.0)
         else:
-            return np.full(256, 0.5)
+            emb = np.full(256, 0.5)
+        return emb / np.linalg.norm(emb)
 
     def match(self, emb1: np.ndarray, emb2: np.ndarray) -> float:
         # Cosine similarity

@@ -9,7 +9,10 @@ def test_bytetrack_with_reid_assigns_ids() -> None:
         high_thresh=0.1, low_thresh=0.05, match_iou=0.1, max_age=3, reid_engine=reid
     )
     emb1 = reid.extract_embedding(np.zeros((256, 128, 3)))
-    emb2 = reid.extract_embedding(np.ones((256, 128, 3)))
+    # Create emb2 orthogonal to emb1 for zero similarity
+    emb2 = np.zeros_like(emb1)
+    emb2[0] = 1.0
+    emb2 = emb2 / np.linalg.norm(emb2)
     dets1 = tracker.update(
         [{"bbox": [0, 0, 100, 100], "confidence": 0.9, "embedding": emb1}]
     )

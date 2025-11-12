@@ -41,3 +41,4 @@ metrics/
 cache/
 *.onnx
 *.pth
+pose_velocity_context.zip

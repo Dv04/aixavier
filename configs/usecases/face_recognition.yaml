@@ -11,12 +11,18 @@ rules:
   - type: frs_match
     whitelist: configs/frs/whitelist.yaml
     blacklist: configs/frs/blacklist.yaml
-    threshold: "{{FRS_THRESHOLD}}"
+    threshold: 0.47 # Default threshold, update with real value
     audit_log: /app/data/audits/frs_audit.log
     blur_unmatched: true
+    event_triggers:
+      - on_match: send_notification
+      - on_unmatched: blur_face
+      - on_dwell: log_event
+    # TODO: Update threshold and triggers with production values
 notifications:
-  mqtt_topic: "{{MQTT_BROKER_URL}}/common/frs"
-  rest_endpoint: "{{EVENTS_REST_ENDPOINT}}/frs"
+  mqtt_topic: "frs/common" # Default topic, update with real value
+  rest_endpoint: "http://localhost:8000/frs" # Default endpoint, update with real value
+  # TODO: Update notification endpoints for production
 artifacts:
   snapshot: true
   clip: optional
@@ -24,3 +30,4 @@ artifacts:
     - matched_identity
     - match_score
     - role
+  # TODO: Add more attributes as needed for downstream analytics
