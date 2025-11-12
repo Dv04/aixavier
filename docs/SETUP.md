@@ -28,21 +28,39 @@ bash deploy/install_deps.sh
 - Fallback: `chrony` with GPS PPS; ensure `timedatectl status` shows `System clock synchronized: yes`.
 
 ## 6. Repository Bootstrap
+
 ```bash
 git clone {{GIT_REMOTE_URL}}
 cd edge-cctv-jetson
 cp .env.example .env
-# fill placeholders via tools
-make placeholders:list
-make placeholders:resolve FROM=.env
+# Fill in required secrets and config keys in .env
+make placeholders:list                  # discover unresolved placeholders
+make placeholders:resolve FROM=.env     # render .env into configs/*
 make bootstrap
 ```
 
+**Important:** Before deploying or shipping, run `make placeholders:check` to ensure all required secrets and config keys are resolved. Only commit `.env.example` and templates—never real secrets. See [`docs/placeholders.md`](docs/placeholders.md) and the [README](../README.md) for onboarding and hygiene guidance.
+
 ## 7. Initial Run
+
 ```bash
 make demo    # validates synthetic pipeline, no external streams
 make perf    # capture baseline metrics (stores under artifacts/perf)
 ```
+
+## 9. UI Endpoints
+
+The FastAPI UI backend exposes endpoints for ROI editing, event browsing, and toggles:
+
+- `POST /ui/roi` – Add a region of interest
+- `GET /ui/roi` – List all ROIs
+- `DELETE /ui/roi/{roi_id}` – Delete an ROI
+- `POST /ui/events` – Add an event
+- `GET /ui/events` – List all events
+- `POST /ui/toggles` – Set a UI toggle
+- `GET /ui/toggles` – List all toggles
+
+Mount the UI router from `src/aixavier/ui/api.py` in your FastAPI app, or use the demo Compose service for local testing. See `src/aixavier/ui/README.md` for details.
 
 ## 8. Production Rollout
 - Populate `configs/cameras.yaml` for each coach.

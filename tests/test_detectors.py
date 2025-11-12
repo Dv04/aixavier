@@ -55,3 +55,32 @@ def test_pose_detector_decode_simcc() -> None:
     assert pytest.approx(x0, rel=1e-3) == (1 / 3) * 256
     assert pytest.approx(y1, rel=1e-3) == (4 / 5) * 192
     assert scores.shape == (1,)
+
+
+class _FakeSession:
+    def __init__(self, outputs):
+        self._outputs = outputs
+
+    def get_inputs(self):
+        return [type("Input", (), {"name": "input"})()]
+
+    def run(self, *_args, **_kwargs):
+        return self._outputs
+
+
+def test_pose_detector_detects_with_simcc_session():
+    det = PoseDetector({"input": {"width": 64, "height": 48}})
+    simcc_x = np.zeros((1, 2, 4), dtype=np.float32)
+    simcc_y = np.zeros((1, 2, 4), dtype=np.float32)
+    simcc_x[0, 0, 1] = 0.8
+    simcc_x[0, 1, 3] = 0.9
+    simcc_y[0, 0, 2] = 0.7
+    simcc_y[0, 1, 1] = 0.95
+    det.session = _FakeSession((simcc_x, simcc_y))
+    det.input_name = "input"
+    image = np.zeros((48, 64, 3), dtype=np.uint8)
+    results = list(det.detect(image))
+    assert len(results) == 1
+    item = results[0]
+    assert "keypoints" in item and len(item["keypoints"]) == 2
+    assert item["bbox"][0] <= item["bbox"][2]

@@ -18,6 +18,7 @@ class TrackerManager:
         low_thresh: float = 0.1,
         match_iou: float = 0.3,
         max_age: int = 30,
+        reid_engine=None,
     ) -> None:
         self.algorithm = algorithm.lower()
         self.trackers: Dict[str, object] = {}
@@ -25,6 +26,7 @@ class TrackerManager:
         self.low_thresh = low_thresh
         self.match_iou = match_iou
         self.max_age = max_age
+        self.reid_engine = reid_engine
         self._cache: Dict[str, List[Dict[str, object]]] = {}
 
     def _build_tracker(self) -> object:
@@ -35,6 +37,7 @@ class TrackerManager:
             low_thresh=self.low_thresh,
             match_iou=self.match_iou,
             max_age=self.max_age,
+            reid_engine=self.reid_engine,
         )
 
     def for_camera(self, camera_id: str) -> object:
@@ -42,7 +45,9 @@ class TrackerManager:
             self.trackers[camera_id] = self._build_tracker()
         return self.trackers[camera_id]
 
-    def update(self, camera_id: str, detections: List[Dict[str, object]]) -> List[Dict[str, object]]:
+    def update(
+        self, camera_id: str, detections: List[Dict[str, object]]
+    ) -> List[Dict[str, object]]:
         tracker = self.for_camera(camera_id)
         updated = tracker.update(detections)
         self._cache[camera_id] = updated

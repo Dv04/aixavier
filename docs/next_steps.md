@@ -2,7 +2,10 @@
 _Date: 2025-11-09_
 
 ## TL;DR
+
 **Verdict:** The repo is **demo-ready** for the eight workloads covered by the current detectors/rules and now carries a **single source of truth for all 22 analytics use cases** via the new manifest/registry. We are still **not production-ready**: face/action detectors stay simulated, secrets remain unresolved (40 placeholders), model bootstrap only creates placeholders, and CI would fail the placeholder hygiene gate.
+
+**Onboarding:** See [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md) for live service/model status, [`docs/placeholders.md`](docs/placeholders.md) for placeholder hygiene, and the [README](../README.md) for quickstart and contribution rules.
 
 Recent work (2025-11-09):
 - Parsed `All Data Analytics use cases for CCTV under POC.xlsx` into `assets/usecases/catalog.yaml` and surfaced it through `src/aixavier/core/usecases.py` so rules/tests/CLI can reason over all 22 workloads.
@@ -25,19 +28,19 @@ Recent work (2025-11-09):
 **Makefile targets:** agent:refresh, bootstrap, ci, clean, demo, format, help, lint, perf, placeholders:check, placeholders:list, placeholders:resolve, run, run-detached, stop, test
 
 ### Component readiness matrix
-| Component | main/app | Dockerfile | In compose | Tests | Status |
-|---|---:|---:|---:|---:|---|
-| agent | ✅ | ✅ | ✅ | — | Demo-ready (no tests) |
-| common | — | — | — | ✅ | Library |
-| events | ✅ | ✅ | ✅ | ✅ | Demo-ready |
-| exporter | ✅ | ✅ | ✅ | — | Demo-ready (simulated metrics) |
-| ingest_gst | ✅ | ✅ | ✅ | — | Demo-ready (RTSP + webcam); needs on-device validation |
-| privacy | ✅ | ✅ | ✅ | — | Demo-ready (simulated matching) |
-| recorder | ✅ | ✅ | ✅ | — | Demo-ready (JSON stubs) |
-| rules | ✅ | ✅ | ✅ | ✅ | Demo-ready |
-| runners | ✅ | ✅ | ✅ | ✅ | Object/Pose operational; face/action simulated |
-| trackers | ✅ | ✅ | ✅ | ✅ | Demo-ready (ByteTrack-lite; add ReID later) |
-| ui | ✅ | ✅ | ✅ | ✅ | Demo-ready |
+| Component  | main/app | Dockerfile | In compose | Tests | Status                                                 |
+| ---------- | -------: | ---------: | ---------: | ----: | ------------------------------------------------------ |
+| agent      |        ✅ |          ✅ |          ✅ |     — | Demo-ready (no tests)                                  |
+| common     |        — |          — |          — |     ✅ | Library                                                |
+| events     |        ✅ |          ✅ |          ✅ |     ✅ | Demo-ready                                             |
+| exporter   |        ✅ |          ✅ |          ✅ |     — | Demo-ready (simulated metrics)                         |
+| ingest_gst |        ✅ |          ✅ |          ✅ |     — | Demo-ready (RTSP + webcam); needs on-device validation |
+| privacy    |        ✅ |          ✅ |          ✅ |     — | Demo-ready (simulated matching)                        |
+| recorder   |        ✅ |          ✅ |          ✅ |     — | Demo-ready (JSON stubs)                                |
+| rules      |        ✅ |          ✅ |          ✅ |     ✅ | Demo-ready                                             |
+| runners    |        ✅ |          ✅ |          ✅ |     ✅ | Object/Pose operational; face/action simulated         |
+| trackers   |        ✅ |          ✅ |          ✅ |     ✅ | Demo-ready (ByteTrack-lite; add ReID later)            |
+| ui         |        ✅ |          ✅ |          ✅ |     ✅ | Demo-ready                                             |
 
 Notes:
 - `runners` powers four services (`detect_object`, `detect_pose`, `detect_face`, `detect_action`); object/pose use the shared detector runtime, while face/action remain simulated.
@@ -89,7 +92,7 @@ Notes:
 - **Security**: OAuth/OIDC proxy in front of UI, short‑lived JWTs, mTLS for events REST when used over WAN; secret scanning in CI.
 
 ### P2 — UX & docs
-- **UI**: Add ROI editor, live camera mosaic, rulepack toggles, and event browser.  
+- **UI**: FastAPI endpoints for ROI editor, event browser, and toggles are now scaffolded (`src/aixavier/ui/`). Mount the router in your app or use the Compose service. Next: add frontend components and integrate with event pipeline.
 - **Docs**: Flesh out `docs/SETUP.md`, `PRIVACY.md`, and `TROUBLESHOOT.md` with concrete JetPack/DeepStream versions and gotchas, and keep `docs/IMPLEMENTATION_STATUS.md`/`assets/usecases/catalog.yaml` in sync when the spreadsheet changes.  
 - **README**: Replace the placeholder sections (auto blocks) after the maintainer agent writes first real tables.
 

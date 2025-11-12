@@ -36,6 +36,7 @@ class ByteTrack:
         low_thresh: float = 0.1,
         match_iou: float = 0.3,
         max_age: int = 30,
+        reid_engine=None,
     ) -> None:
         self.high_thresh = high_thresh
         self.low_thresh = low_thresh
@@ -43,31 +44,51 @@ class ByteTrack:
         self.max_age = max_age
         self._tracks: Dict[int, TrackState] = {}
         self._next_id = 1
+        self.reid_engine = reid_engine
 
     def _spawn_track(self, det: Dict[str, object]) -> TrackState:
         tid = self._next_id
         self._next_id += 1
-        track = TrackState(track_id=tid, bbox=list(det["bbox"]), score=float(det.get("confidence", 0.0)))
+        track = TrackState(
+            track_id=tid,
+            bbox=list(det["bbox"]),
+            score=float(det.get("confidence", 0.0)),
+        )
         self._tracks[tid] = track
         det["track_id"] = tid
         det["first_seen"] = det.get("timestamp")
         return track
 
-    def _match(self, tracks: Iterable[TrackState], detections: List[Dict[str, object]]) -> None:
+    def _match(
+        self, tracks: Iterable[TrackState], detections: List[Dict[str, object]]
+    ) -> None:
         unmatched_tracks: Dict[int, TrackState] = {t.track_id: t for t in tracks}
         for det in detections:
-            best_iou, best_id = 0.0, None
+            best_score, best_id = 0.0, None
             for tid, state in list(unmatched_tracks.items()):
                 iou = _iou(state.bbox, det["bbox"])
-                if iou > best_iou:
-                    best_iou = iou
+                score = iou
+                # If ReID engine is available and embeddings present, use ReID for matching
+                if (
+                    self.reid_engine
+                    and "embedding" in det
+                    and "embedding" in state.__dict__
+                ):
+                    reid_score = self.reid_engine.match(
+                        det["embedding"], state.__dict__["embedding"]
+                    )
+                    score = max(score, reid_score)
+                if score > best_score:
+                    best_score = score
                     best_id = tid
-            if best_iou >= self.match_iou and best_id is not None:
+            if best_score >= self.match_iou and best_id is not None:
                 state = self._tracks[best_id]
                 state.bbox = list(det["bbox"])
                 state.score = float(det.get("confidence", state.score))
                 state.age = 0
                 state.hits += 1
+                if "embedding" in det:
+                    state.__dict__["embedding"] = det["embedding"]
                 det["track_id"] = best_id
                 unmatched_tracks.pop(best_id, None)
             else:
@@ -81,7 +102,11 @@ class ByteTrack:
             if state.age > self.max_age:
                 del self._tracks[tid]
 
-        high_conf = [det for det in detections if float(det.get("confidence", 0.0)) >= self.high_thresh]
+        high_conf = [
+            det
+            for det in detections
+            if float(det.get("confidence", 0.0)) >= self.high_thresh
+        ]
         low_conf = [
             det
             for det in detections
@@ -97,7 +122,11 @@ class ByteTrack:
 
         # Try to salvage low-confidence detections (keeps tracks alive)
         self._match(
-            (state for state in self._tracks.values() if state.track_id not in [det.get("track_id") for det in high_conf]),
+            (
+                state
+                for state in self._tracks.values()
+                if state.track_id not in [det.get("track_id") for det in high_conf]
+            ),
             low_conf,
         )
 
@@ -147,7 +176,11 @@ class SimpleTracker:
         for det in detections:
             if det.get("track_id"):
                 tid = int(det["track_id"])
-                self._tracks[tid] = TrackState(track_id=tid, bbox=list(det["bbox"]), score=float(det.get("confidence", 0.0)))
+                self._tracks[tid] = TrackState(
+                    track_id=tid,
+                    bbox=list(det["bbox"]),
+                    score=float(det.get("confidence", 0.0)),
+                )
 
         for det in detections:
             if det.get("track_id"):
@@ -167,7 +200,11 @@ class SimpleTracker:
             else:
                 tid = self._next_id
                 self._next_id += 1
-                self._tracks[tid] = TrackState(track_id=tid, bbox=list(det["bbox"]), score=float(det.get("confidence", 0.0)))
+                self._tracks[tid] = TrackState(
+                    track_id=tid,
+                    bbox=list(det["bbox"]),
+                    score=float(det.get("confidence", 0.0)),
+                )
                 det["track_id"] = tid
         return detections
 

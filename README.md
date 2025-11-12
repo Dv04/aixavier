@@ -17,20 +17,22 @@ make demo                               # bring up docker-compose demo with synt
 
 Once the demo profile is healthy, switch to production profiles by exporting `PROFILE=all` (full 22-rule workload) or pointing to a bespoke profile file via `PROFILE=path/to/profile.yaml`.
 
+**Important:** Run `make placeholders:check` before shipping or deploying. Only commit `.env.example` and templates—never real secrets. See [`docs/placeholders.md`](docs/placeholders.md) for the live inventory.
+
 ## Daily Driver Commands
-| Command | Purpose |
-|---------|---------|
-| `make bootstrap` | Bootstrap virtualenv, install runtime + dev tooling, pre-build engines. |
-| `make run PROFILE=<name>` | Launch the docker compose stack for the selected profile. |
-| `make demo` | Generate demo assets and start the curated eight-rule showcase. |
-| `make perf` | Capture FPS, latency, and GPU utilisation snapshots from the exporter API. |
-| `make test` | Run pytest suite plus RTSP smoke tests. |
-| `make lint` | Run ruff (lint) and mypy (type checks) over `src` and `tools`. |
-| `make agent:refresh -- --dry-run` | Exercise the maintainer agent without mutating docs. |
-| `make clean` | Tear down compose services, remove the virtualenv, and clear caches. |
-| `make live CONFIG=... SRC=...` | Run the local detector pipeline; spawns ingest + detector with your config/source (defaults to pose velocity + webcam). |
-| `SHOW=1 make live ...` | Same as above, but opens a preview window with pose overlays. |
-| `RECORD=artifacts/pose.mp4 make live ...` | Same as above, but records the annotated frames to MP4 (combine with `SHOW=1` if desired). |
+| Command                                   | Purpose                                                                                                                 |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `make bootstrap`                          | Bootstrap virtualenv, install runtime + dev tooling, pre-build engines.                                                 |
+| `make run PROFILE=<name>`                 | Launch the docker compose stack for the selected profile.                                                               |
+| `make demo`                               | Generate demo assets and start the curated eight-rule showcase.                                                         |
+| `make perf`                               | Capture FPS, latency, and GPU utilisation snapshots from the exporter API.                                              |
+| `make test`                               | Run pytest suite plus RTSP smoke tests.                                                                                 |
+| `make lint`                               | Run ruff (lint) and mypy (type checks) over `src` and `tools`.                                                          |
+| `make agent:refresh -- --dry-run`         | Exercise the maintainer agent without mutating docs.                                                                    |
+| `make clean`                              | Tear down compose services, remove the virtualenv, and clear caches.                                                    |
+| `make live CONFIG=... SRC=...`            | Run the local detector pipeline; spawns ingest + detector with your config/source (defaults to pose velocity + webcam). |
+| `SHOW=1 make live ...`                    | Same as above, but opens a preview window with pose overlays.                                                           |
+| `RECORD=artifacts/pose.mp4 make live ...` | Same as above, but records the annotated frames to MP4 (combine with `SHOW=1` if desired).                              |
 
 ### Model assets
 - Place development ONNX exports under `models/object/onnx/` and `models/pose/onnx/` if you want CPU-backed inference.
@@ -81,11 +83,11 @@ Want persistent captures during `make live`? Just run `SAVE_FRAMES=1 make live .
 3. Update `configs/detectors/object.yaml` / `configs/detectors/pose_velocity.yaml` if your filenames differ. Leave INT8 calibration for later (the scripts under `models/*/calibrate.sh` act as placeholders until we capture calibration sets).
 
 ## Runtime Profiles at a Glance
-| Profile | Focus | FPS Target | Notable Intervals |
-|---------|-------|------------|-------------------|
-| `minimal` | Tamper + Trespass | 30 | Detectors on every frame. |
-| `demo` | Eight representative use cases | 25 | Action detectors every 3 frames, face recognition every 2. |
-| `all` | Full 22-rule workload | 25 | Per-use-case intervals in `configs/usecases/*.yaml`. |
+| Profile   | Focus                          | FPS Target | Notable Intervals                                          |
+| --------- | ------------------------------ | ---------- | ---------------------------------------------------------- |
+| `minimal` | Tamper + Trespass              | 30         | Detectors on every frame.                                  |
+| `demo`    | Eight representative use cases | 25         | Action detectors every 3 frames, face recognition every 2. |
+| `all`     | Full 22-rule workload          | 25         | Per-use-case intervals in `configs/usecases/*.yaml`.       |
 
 Select a profile by exporting `PROFILE=<name>` or passing `PROFILE=...` to individual make targets. Compose profiles live under `docker-compose.yml`.
 
@@ -98,7 +100,7 @@ Select a profile by exporting `PROFILE=<name>` or passing `PROFILE=...` to indiv
 6. **Events (`src/events/`)** – Normalises detections, ships MQTT/REST payloads, and persists artefacts.
 7. **Recorder (`src/recorder/`)** – Circular buffers with pre/post recording windows, watermarking, hashing, and export flows.
 8. **Exporter (`src/exporter/`)** – Prometheus metrics and OpenTelemetry traces surfaced via HTTP.
-9. **UI (`src/ui/`)** – FastAPI backend and Streamlit-based dashboard with live mosaics and ROI editor.
+9. **UI (`src/aixavier/ui/`)** – FastAPI backend exposes endpoints for ROI editing, event browser, and toggles. See `src/aixavier/ui/README.md` for API details. Frontend integration is planned.
 10. **Automation Agent (`src/agent/`)** – Gathers model intelligence, updates documentation, and logs activity to `HANDOFF.md`.
 
 The refactor toward `src/aixavier/` will co-locate agents under `src/aixavier/agents/` and shared infrastructure under `src/aixavier/core/`. Existing modules will migrate in-place; prefer those paths for new code.
@@ -139,23 +141,24 @@ When satisfied, drop the `--dry-run` flag to persist updates.
 - Never substitute real credentials directly in committed files—leave `{{PLACEHOLDER}}` tokens intact.
 - Use `make placeholders:check` to ensure all placeholders resolve before shipping production builds.
 - Secrets live in `.env` (gitignored) and environment-specific secret stores.
+- See [`docs/placeholders.md`](docs/placeholders.md) for the live inventory and resolution status.
 
 ## Governance & Next Steps
 - Follow Conventional Commits and keep subject lines ≤72 characters.
 - CI (see `.github/workflows/agent-ci.yml`) runs lint, tests, placeholder checks, and secret scanning.
-- Record any roadmap items in `docs/roadmap.md` (coming soon) rather than inline TODO comments.
-- The next structural milestone is migrating runtime modules under `src/aixavier/` per `AGENTS.md`.
+- Record any roadmap items in [`docs/next_steps.md`](docs/next_steps.md) and [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md) rather than inline TODO comments.
+- The next structural milestone is migrating runtime modules under `src/aixavier/` per [`AGENTS.md`](AGENTS.md).
 
 ## Live Auto Sections
 <!-- auto:start name=recommended-models -->
-| Rank | Task | Model | FP16 (ms) | INT8 (ms) | Accuracy | License | Last Checked |
-|------|------|-------|-----------|-----------|----------|---------|--------------|
-| 1 | face_recognition | MobileFaceNet ArcFace | 2.10 | 1.50 | 0.996 | MIT | 2025-09-27 |
-| 2 | reid | OSNet_x0_25 | 1.90 | 1.30 | 0.508 | MIT | 2025-09-22 |
-| 3 | face_detection | SCRFD-500M | 6.20 | 4.10 | 0.915 | MIT | 2025-09-27 |
-| 4 | fire_smoke_detection | EfficientNet-B0 Fire | 9.80 | 6.70 | 0.923 | Apache-2.0 | 2025-09-18 |
-| 5 | violence_detection | MobileNet-TSM | 12.90 | 9.00 | 0.842 | Apache-2.0 | 2025-09-21 |
-| 6 | pose_estimation | YOLOv8n-pose | 11.30 | 7.90 | 0.608 | GPLv3 | 2025-09-30 |
+| Rank | Task                 | Model                 | FP16 (ms) | INT8 (ms) | Accuracy | License    | Last Checked |
+| ---- | -------------------- | --------------------- | --------- | --------- | -------- | ---------- | ------------ |
+| 1    | face_recognition     | MobileFaceNet ArcFace | 2.10      | 1.50      | 0.996    | MIT        | 2025-09-27   |
+| 2    | reid                 | OSNet_x0_25           | 1.90      | 1.30      | 0.508    | MIT        | 2025-09-22   |
+| 3    | face_detection       | SCRFD-500M            | 6.20      | 4.10      | 0.915    | MIT        | 2025-09-27   |
+| 4    | fire_smoke_detection | EfficientNet-B0 Fire  | 9.80      | 6.70      | 0.923    | Apache-2.0 | 2025-09-18   |
+| 5    | violence_detection   | MobileNet-TSM         | 12.90     | 9.00      | 0.842    | Apache-2.0 | 2025-09-21   |
+| 6    | pose_estimation      | YOLOv8n-pose          | 11.30     | 7.90      | 0.608    | GPLv3      | 2025-09-30   |
 <!-- auto:end -->
 
 <!-- auto:start name=performance-tuning -->

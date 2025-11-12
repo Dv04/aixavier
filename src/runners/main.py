@@ -186,10 +186,13 @@ def run() -> None:
             detections = list(detector.detect(image))
             proc_time = time.time() - start
             fps_est = 1.0 / proc_time if proc_time > 0 else 0.0
+            latency_ms = proc_time * 1000.0
 
             for det in detections:
                 det.setdefault("first_seen", timestamp)
                 det.setdefault("timestamp", timestamp)
+                det.setdefault("latency_ms", latency_ms)
+                det.setdefault("detector", detector.config.get("model", detector.__class__.__name__))
 
             if detector.event_type == "object":
                 detections = OBJECT_TRACKERS.update(camera_id, detections)
@@ -219,6 +222,8 @@ def run() -> None:
 
             for idx, detection in enumerate(detections):
                 payload = build_event_payload(detector, frame, detection, idx)
+                payload.setdefault("latency_ms", latency_ms)
+                payload.setdefault("detector", detector.config.get("model", detector.__class__.__name__))
                 bus.publish(Event(type=detector.event_type, payload=payload))
 
             if SHOW_PREVIEW and vis_frame is not None:
