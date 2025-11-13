@@ -16,7 +16,8 @@ from src.trackers import TrackerManager
 from src.common.event_bus import Event, FileEventBus
 from .detectors import BaseDetector, build_detector
 from .pose_assoc import associate_pose_tracks
-from .renderer import draw_hud, draw_pose
+from .renderer import draw_hud, draw_pose, draw_track_label
+from .pose_events import PoseUseCaseMonitor
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s %(message)s")
 LOGGER = logging.getLogger("detector-runner")
@@ -146,6 +147,10 @@ def cleanup_frame(path: str | Path | None, persist: bool) -> None:
 def run() -> None:
     config = load_config()
     detector = build_detector(config)
+    pose_monitor: Optional[PoseUseCaseMonitor] = None
+    if detector.event_type == "pose":
+        fps_hint = float(os.getenv("LIVE_DEMO_CAPTURE_FPS", os.getenv("LIVE_DEMO_RECORD_FPS", "25")))
+        pose_monitor = PoseUseCaseMonitor(fps_hint=fps_hint)
 
     publish_path = config.get("publish_path", "artifacts/detections/events.log")
     publish_dir = Path(publish_path)
@@ -162,6 +167,8 @@ def run() -> None:
         for frame in stream_frames(log_path):
             persist_frame = bool(frame.get("persist", True))
             frame_path = frame.get("path")
+            if pose_monitor is not None:
+                pose_monitor.update_telemetry(frame.get("telemetry"))
             frame_skip = (frame_skip + 1) % interval
             if frame_skip:
                 cleanup_frame(frame_path, persist_frame)
@@ -187,6 +194,7 @@ def run() -> None:
             proc_time = time.time() - start
             fps_est = 1.0 / proc_time if proc_time > 0 else 0.0
             latency_ms = proc_time * 1000.0
+            track_labels: Dict[int, str] = {}
 
             for det in detections:
                 det.setdefault("first_seen", timestamp)
@@ -200,6 +208,9 @@ def run() -> None:
             elif detector.event_type == "pose":
                 detections = assign_pose_ids(camera_id, detections)
                 detections = POSE_TRACKERS.update(camera_id, detections)
+                if pose_monitor is not None:
+                    pose_monitor.process(camera_id, detections, fps_est or pose_monitor.fps_hint)
+                    track_labels = pose_monitor.track_labels()
 
             vis_frame = None
             if render_enabled:
@@ -214,10 +225,16 @@ def run() -> None:
                             np.asarray(keypoints, dtype=np.float32),
                             det.get("bbox"),
                         )
+                        if pose_monitor is not None:
+                            track_label = track_labels.get(det.get("track_id"))
+                            if track_label:
+                                vis_frame = draw_track_label(vis_frame, det.get("bbox"), track_label)
                 hud_lines = [
                     f"FPS={fps_est:.1f} frame={frame.get('frame_index', '-')}",
                     f"detections={len(detections)} camera={camera_id}",
                 ]
+                if pose_monitor is not None and detector.event_type == "pose":
+                    hud_lines.extend(pose_monitor.hud_lines())
                 vis_frame = draw_hud(vis_frame, hud_lines)
 
             for idx, detection in enumerate(detections):

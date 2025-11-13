@@ -86,6 +86,7 @@ Use-case metadata is tracked centrally in `assets/usecases/catalog.yaml` (auto-p
 - Stage production TensorRT engines under `models/usecases/<use-case>/fp16/` (INT8 later).
 - `models/pose/TODO.md` and `models/object/TODO.md` track outstanding work for the two active use cases.
 - Calibration datasets should live under `models/<modality>/calib/`.
+- `configs/detectors/pose_velocity.yaml` now embeds a `person_detector` block (YOLOv8n by default) so RTMPose runs in a top-down, multi-person configuration—each detected person is cropped before pose inference.
 
 ### Model Group Strategy
 
@@ -94,7 +95,7 @@ Group shared models by analytic modality, keep raw ONNX/checkpoints beneath `mod
 | Group                       | Folder                                               | Use cases served            | Notes                                                                                                                       |
 | --------------------------- | ---------------------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | Object detection / tracking | `models/object/...` (ONNX) + shared tracker configs  | 1,4,5,6,7,11,15,16,17,18,21 | Backed by YOLOv8/YOLOv10 exports; tracker tuned via `configs/tracker.yaml`.                                                 |
-| Pose & velocity             | `models/pose/onnx/rtmpose_onnx/...`                  | 8,13,20,22                  | RTMPose ONNX feeds TRT engines under `models/usecases/pose/`; shared SimCC decoder already implemented.                     |
+| Pose & velocity             | `models/pose/onnx/rtmpose_onnx/...`                  | 8,13,20,22                  | RTMPose ONNX feeds TRT engines under `models/usecases/pose/`; multi-person crops come from the shared YOLO person detector (`person_detector` block). |
 | Action / clip analytics     | `models/action/onnx/...`                             | 2,12,13,17,20,22            | Hosts X3D-S, MobileNet-TSM, gesture classifiers. Current services still simulated—wire TRT engines + calibration here.      |
 | Face / ReID                 | `models/face/...`, `models/reid/...`                 | 9,14                        | SCRFD + ArcFace + OSNet_x0_25 assets live here; upgrade once production engines ready.                                      |
 | Audio / ASR                 | `models/audio/...`                                   | 19                          | Placeholder for future speech-recognition weights used in calling-out-signal-aspect detection.                              |

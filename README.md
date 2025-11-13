@@ -39,6 +39,10 @@ Once the demo profile is healthy, switch to production profiles by exporting `PR
 - Promote production TensorRT engines (FP16/INT8) into `models/usecases/<use-case>/fp16|int8/` and update `configs/detectors/*.yaml` to match.
 - Run `models/bootstrap_models.py` to generate placeholder files when CI needs to stub missing assets.
 
+### Multi-person pose (top-down)
+- `configs/detectors/pose_velocity.yaml` now includes a `person_detector` block (default: YOLOv8n) so the pose runner crops **each person** before running RTMPose. Populate `models/object/onnx/yolov8n.onnx` (or any compatible detector), adjust the thresholds if needed, and run `SHOW=1 make live`—each person receives an independent skeleton and banner.
+- If you prefer bottom-up pose (single-person), remove the `person_detector` section and the runtime will fall back to whole-frame inference.
+
 ### Tracker configuration
 - ByteTrack-lite is enabled by default (`TRACKER_ALGO=bytetrack`). Override with `TRACKER_ALGO=simple` if you need the lightweight IoU tracker for debugging.
 - Pose trackers use `POSE_TRACKER_ALGO` (defaults to `simple`); set to `bytetrack` once you need tighter pose ID smoothing.

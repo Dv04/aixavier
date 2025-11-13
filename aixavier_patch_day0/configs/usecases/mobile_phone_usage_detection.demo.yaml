@@ -1,6 +1,0 @@
-
-thresholds:
-  phone_usage_score: 0.6
-  min_dwell_s: 2
-gate:
-  min_speed_kmph: 1

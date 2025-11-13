@@ -230,12 +230,46 @@ class PoseDetector(BaseDetector):
         self.input_w, self.input_h = _sync_session_dims(
             self.session, self.input_w, self.input_h
         )
+        person_cfg = config.get("person_detector") or {}
+        if person_cfg:
+            self.person_detector = ObjectDetector(person_cfg)
+            class_filter = person_cfg.get("classes_filter") or person_cfg.get("classes") or ["person"]
+            self.person_class_filter = {str(label).lower() for label in class_filter}
+            self.person_min_conf = float(person_cfg.get("confidence_threshold", 0.4))
+            self.person_padding_ratio = float(person_cfg.get("crop_padding_ratio", 0.15))
+        else:
+            self.person_detector = None
+            self.person_class_filter = set()
+            self.person_min_conf = 0.0
+            self.person_padding_ratio = 0.0
         LOGGER.info("Pose detector ready; ONNX=%s", bool(self.session))
 
     def detect(self, image: np.ndarray) -> Iterable[Dict[str, Any]]:
-        if self.session:
-            return self._detect_onnx(image)
-        return self._detect_heuristic(image)
+        if not self.session:
+            return self._detect_heuristic(image)
+        if self.person_detector is not None:
+            person_boxes = self._person_boxes(image)
+            if person_boxes:
+                detections: List[Dict[str, Any]] = []
+                for bbox in person_boxes:
+                    detections.extend(self._detect_from_person(image, bbox))
+                if detections:
+                    return detections
+        return self._detect_full_frame(image)
+
+    def _person_boxes(self, image: np.ndarray) -> List[List[float]]:
+        boxes: List[List[float]] = []
+        for det in self.person_detector.detect(image):
+            class_name = str(det.get("class", "")).lower()
+            if class_name not in self.person_class_filter:
+                continue
+            if float(det.get("confidence", 0.0)) < self.person_min_conf:
+                continue
+            bbox = det.get("bbox")
+            if not bbox or len(bbox) != 4:
+                continue
+            boxes.append([float(x) for x in bbox])
+        return boxes
 
     def _decode_simcc(
         self, simcc_x: Any, simcc_y: Any
@@ -281,10 +315,48 @@ class PoseDetector(BaseDetector):
         keypoints = np.stack((x_coord, y_coord, kp_scores), axis=-1)
         return boxes, pose_scores, keypoints
 
-    def _detect_onnx(self, image: np.ndarray) -> Iterable[Dict[str, Any]]:
+    def _detect_full_frame(self, image: np.ndarray) -> Iterable[Dict[str, Any]]:
+        blob, scale, pad = self._prepare_blob(image)
+        boxes, scores, keypoints, boxes_are_xywh = self._run_forward(blob)
+        return self._build_detections(
+            boxes, scores, keypoints, boxes_are_xywh, pad, scale, offset=(0.0, 0.0)
+        )
+
+    def _detect_from_person(self, image: np.ndarray, bbox: List[float]) -> List[Dict[str, Any]]:
+        h, w = image.shape[:2]
+        x1, y1, x2, y2 = [int(round(v)) for v in bbox]
+        pad_x = int((x2 - x1) * self.person_padding_ratio)
+        pad_y = int((y2 - y1) * self.person_padding_ratio)
+        x1 = max(0, x1 - pad_x)
+        y1 = max(0, y1 - pad_y)
+        x2 = min(w, x2 + pad_x)
+        y2 = min(h, y2 + pad_y)
+        if x2 <= x1 or y2 <= y1:
+            return []
+        crop = image[y1:y2, x1:x2]
+        if crop.size == 0:
+            return []
+        blob, scale, pad = self._prepare_blob(crop)
+        boxes, scores, keypoints, boxes_are_xywh = self._run_forward(blob)
+        return self._build_detections(
+            boxes,
+            scores,
+            keypoints,
+            boxes_are_xywh,
+            pad,
+            scale,
+            offset=(float(x1), float(y1)),
+        )
+
+    def _prepare_blob(self, image: np.ndarray) -> Tuple[np.ndarray, float, Tuple[int, int]]:
         img, scale, pad = letterbox(image, (self.input_w, self.input_h))
         blob = img.transpose(2, 0, 1).astype(np.float32) / 255.0
         blob = np.expand_dims(blob, 0)
+        return blob, scale, pad
+
+    def _run_forward(
+        self, blob: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, bool]:
         outputs = self.session.run(None, {self.input_name: blob})
         if isinstance(outputs, (list, tuple)) and len(outputs) == 2:
             boxes, scores, keypoints = self._decode_simcc(outputs[0], outputs[1])
@@ -298,22 +370,37 @@ class PoseDetector(BaseDetector):
             num_points = keypoints.shape[1] // 3
             keypoints = keypoints.reshape(keypoints.shape[0], num_points, 3)
             boxes_are_xywh = True
+        return boxes, scores, keypoints, boxes_are_xywh
+
+    def _build_detections(
+        self,
+        boxes: np.ndarray,
+        scores: np.ndarray,
+        keypoints: np.ndarray,
+        boxes_are_xywh: bool,
+        pad: Tuple[int, int],
+        scale: float,
+        offset: Tuple[float, float],
+    ) -> List[Dict[str, Any]]:
         mask = scores >= self.conf_thres
         boxes, scores, keypoints = boxes[mask], scores[mask], keypoints[mask]
         if boxes.size == 0:
             return []
-        if keypoints.ndim == 3 and keypoints.shape[2] == 3:
-            pass
-        else:
+        if keypoints.ndim != 3 or keypoints.shape[2] != 3:
             num_points = keypoints.shape[1] // 3
             keypoints = keypoints.reshape(keypoints.shape[0], num_points, 3)
         if boxes_are_xywh:
             boxes = xywh_to_xyxy(boxes)
-        boxes -= np.array([pad[0], pad[1], pad[0], pad[1]])
-        boxes /= scale
-        keypoints[:, :, 0] -= pad[0]
-        keypoints[:, :, 1] -= pad[1]
-        keypoints[:, :, :2] /= scale
+        boxes -= np.array([pad[0], pad[1], pad[0], pad[1]], dtype=np.float32)
+        if scale > 0:
+            boxes /= scale
+            keypoints[:, :, 0] -= pad[0]
+            keypoints[:, :, 1] -= pad[1]
+            keypoints[:, :, :2] /= scale
+        boxes[:, [0, 2]] += offset[0]
+        boxes[:, [1, 3]] += offset[1]
+        keypoints[:, :, 0] += offset[0]
+        keypoints[:, :, 1] += offset[1]
         keep = nms(boxes, scores, self.iou_thres)
         if self.max_det and len(keep) > self.max_det:
             keep = sorted(keep, key=lambda idx: scores[idx], reverse=True)[

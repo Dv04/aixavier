@@ -85,3 +85,32 @@ def draw_hud(image: np.ndarray, lines: Iterable[str], origin: Tuple[int, int] = 
         y += 22
     return image
 
+
+def draw_track_label(
+    image: np.ndarray,
+    bbox: Sequence[float] | None,
+    label: str,
+    color: Tuple[int, int, int] = (0, 255, 255),
+) -> np.ndarray:
+    if not label:
+        return image
+    h, w = image.shape[:2]
+    if bbox and len(bbox) == 4:
+        x = int(max(0, min(w - 1, bbox[0])))
+        y = int(max(0, min(h - 1, bbox[1] - 8)))
+    else:
+        x, y = 10, 10
+    cv2.putText(
+        image,
+        label,
+        (x, y),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        color,
+        2,
+        lineType=cv2.LINE_AA,
+    )
+    return image
+
+
+__all__ = ["draw_pose", "draw_hud", "draw_track_label"]

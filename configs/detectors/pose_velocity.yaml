@@ -11,3 +11,14 @@ interval: 3
 confidence_threshold: 0.25
 nms_iou_threshold: 0.6
 max_detections: 200
+person_detector:
+  onnx_path: models/object/onnx/yolov8n.onnx
+  input:
+    width: 640
+    height: 640
+  confidence_threshold: 0.4
+  nms_iou_threshold: 0.45
+  max_detections: 20
+  classes:
+    - person
+  crop_padding_ratio: 0.15
