@@ -34,7 +34,9 @@ class SimpleArray:
         return SimpleArray(result) if isinstance(result, (list, tuple)) else result
 
 
-def _transpose_021(data: Sequence[Sequence[Sequence[float]]]) -> List[List[List[float]]]:
+def _transpose_021(
+    data: Sequence[Sequence[Sequence[float]]],
+) -> List[List[List[float]]]:
     dim0 = len(data)
     dim1 = len(data[0]) if dim0 else 0
     dim2 = len(data[0][0]) if dim1 else 0
@@ -90,7 +92,9 @@ def normalise_object_output(out):
         elif arr.ndim != 2:
             raise RuntimeError(f"Unexpected detector output shape: {arr.shape}")
         if arr.shape[1] < 6:
-            raise RuntimeError(f"Detector output has insufficient features: {arr.shape}")
+            raise RuntimeError(
+                f"Detector output has insufficient features: {arr.shape}"
+            )
         return arr
 
     data = out
@@ -148,3 +152,21 @@ __all__ = [
     "normalise_object_output",
     "normalise_pose_output",
 ]
+
+
+def _ema(previous, current, alpha: float = 0.4):
+    if previous is None:
+        return current
+    return alpha * current + (1 - alpha) * previous
+
+
+class KeypointSmoother:
+    """Exponential moving average smoother for pose keypoints."""
+
+    def __init__(self, alpha: float = 0.4) -> None:
+        self.alpha = alpha
+        self._previous = None
+
+    def __call__(self, keypoints):
+        self._previous = _ema(self._previous, keypoints, self.alpha)
+        return self._previous

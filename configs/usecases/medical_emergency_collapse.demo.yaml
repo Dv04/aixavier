@@ -1,0 +1,6 @@
+thresholds:
+  collapse_score: 0.65
+  followup_prone_s: 4
+emit:
+  snapshot: true
+  clip_seconds: 6

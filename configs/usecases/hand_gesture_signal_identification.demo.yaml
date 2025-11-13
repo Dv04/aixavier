@@ -1,0 +1,5 @@
+labels:
+  halt: 0.6
+  proceed: 0.6
+emit:
+  overlay_label: true

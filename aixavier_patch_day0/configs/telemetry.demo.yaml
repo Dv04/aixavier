@@ -1,0 +1,6 @@
+
+topics:
+  speed: demo/speed
+  door: demo/door
+defaults:
+  min_speed_kmph: 5
