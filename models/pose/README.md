@@ -1,8 +1,8 @@
 # Pose Estimation Assets
 
-Default: YOLOv8 Pose or RTMPose (see `models/usecases/pose/`).
-- Input: 256x192 (RTMPose tiny) or 640x640 (YOLOv8 Pose)
-- Latency FP16: ~11 ms per frame on Xavier AGX (YOLOv8n pose)
+Default: yolov11 Pose or RTMPose (see `models/usecases/pose/`).
+- Input: 256x192 (RTMPose tiny) or 640x640 (yolov11 Pose)
+- Latency FP16: ~11 ms per frame on Xavier AGX (yolov11n pose)
 - VRAM: ~1.2–1.5 GB (tensor buffers included)
 
 ### How to stage assets

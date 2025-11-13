@@ -40,7 +40,14 @@ Once the demo profile is healthy, switch to production profiles by exporting `PR
 - Run `models/bootstrap_models.py` to generate placeholder files when CI needs to stub missing assets.
 
 ### Multi-person pose (top-down)
-- `configs/detectors/pose_velocity.yaml` now includes a `person_detector` block (default: YOLOv8n) so the pose runner crops **each person** before running RTMPose. Populate `models/object/onnx/yolov8n.onnx` (or any compatible detector), adjust the thresholds if needed, and run `SHOW=1 make live`—each person receives an independent skeleton and banner.
+- `configs/detectors/pose_velocity.yaml` now includes a `person_detector` block (default: YOLO11n) so the pose runner crops **each person** before running RTMPose. Populate `models/object/onnx/yolo11n.onnx` (or any compatible detector), adjust the thresholds if needed, and run `SHOW=1 make live`—each person receives an independent skeleton and banner.
+- Exporting YOLO11n to ONNX:
+  ```bash
+  source .venv/bin/activate
+  pip install --upgrade ultralytics
+  yolo export model=yolo11n.pt format=onnx imgsz=640 dynamic=False simplify=True
+  mv yolo11n.onnx models/object/onnx/
+  ```
 - If you prefer bottom-up pose (single-person), remove the `person_detector` section and the runtime will fall back to whole-frame inference.
 
 ### Tracker configuration
@@ -80,8 +87,8 @@ Want persistent captures during `make live`? Just run `SAVE_FRAMES=1 make live .
      --saveEngine=models/usecases/pose/fp16/rtmpose.engine \
      --fp16 --workspace=4096
    trtexec \
-     --onnx=models/usecases/object_detection/onnx/yolov8n.onnx \
-     --saveEngine=models/usecases/object_detection/fp16/yolov8n.engine \
+     --onnx=models/usecases/object_detection/onnx/yolov11n.onnx \
+     --saveEngine=models/usecases/object_detection/fp16/yolov11n.engine \
      --fp16 --workspace=4096
    ```
 3. Update `configs/detectors/object.yaml` / `configs/detectors/pose_velocity.yaml` if your filenames differ. Leave INT8 calibration for later (the scripts under `models/*/calibrate.sh` act as placeholders until we capture calibration sets).
@@ -162,11 +169,11 @@ When satisfied, drop the `--dry-run` flag to persist updates.
 | 3    | face_detection       | SCRFD-500M            | 6.20      | 4.10      | 0.915    | MIT        | 2025-09-27   |
 | 4    | fire_smoke_detection | EfficientNet-B0 Fire  | 9.80      | 6.70      | 0.923    | Apache-2.0 | 2025-09-18   |
 | 5    | violence_detection   | MobileNet-TSM         | 12.90     | 9.00      | 0.842    | Apache-2.0 | 2025-09-21   |
-| 6    | pose_estimation      | YOLOv8n-pose          | 11.30     | 7.90      | 0.608    | GPLv3      | 2025-09-30   |
+| 6    | pose_estimation      | yolov11n-pose         | 11.30     | 7.90      | 0.608    | GPLv3      | 2025-09-30   |
 <!-- auto:end -->
 
 <!-- auto:start name=performance-tuning -->
-- **DeepStream primary-gie batching**: Use batch-size=2 for YOLOv8n on AGX when PROFILE=all; falls back to 1 on NX. (_Impact_: Improves ingest FPS by ~8% while keeping latency under 40 ms.)
+- **DeepStream primary-gie batching**: Use batch-size=2 for yolov11n on AGX when PROFILE=all; falls back to 1 on NX. (_Impact_: Improves ingest FPS by ~8% while keeping latency under 40 ms.)
 - **TensorRT DLA offload**: Assign SCRFD embedding head to DLA0 in demo profile to free SMs for violence detector. (_Impact_: Reduces GPU util by 6% during peak loads.)
 - **Recorder I/O buffering**: Set GStreamer queue `max-size-time=3000000000` (3 s) for circular buffer stability. (_Impact_: Prevents underflow when writing to slower eMMC storage.)
 <!-- auto:end -->

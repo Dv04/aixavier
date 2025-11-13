@@ -1,7 +1,7 @@
 task: object_detection
-model: yolov8n
-engine_path: models/usecases/object_detection/fp16/yolov8n.engine
-onnx_path: models/usecases/object_detection/onnx/yolov8n.onnx
+model: yolov11n
+engine_path: models/usecases/object_detection/fp16/yolov11n.engine
+onnx_path: models/usecases/object_detection/onnx/yolov11n.onnx
 precision: fp16
 publish_path: artifacts/detections/events.log
 input:

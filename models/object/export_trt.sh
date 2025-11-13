@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-MODEL_WEIGHTS=${1:-weights/yolov8n.pt}
+MODEL_WEIGHTS=${1:-weights/yolov11n.pt}
 OUT_DIR=engines
 mkdir -p onnx "$OUT_DIR"
 python3 - <<'PY'
@@ -11,7 +11,7 @@ weights = Path(sys.argv[1])
 if not weights.exists():
     print(f"Weights {weights} missing. Run download.sh first.", file=sys.stderr)
     sys.exit(1)
-onnx = Path('onnx/yolov8n.onnx')
+onnx = Path('onnx/yolov11n.onnx')
 if not onnx.exists():
     subprocess.run([
         'python3', '-m', 'ultralytics', 'export',
@@ -20,12 +20,12 @@ if not onnx.exists():
         'imgsz=640',
         'half=True'
     ], check=True)
-engine = Path('engines/yolov8n-fp16.engine')
+engine = Path('engines/yolov11n-fp16.engine')
 if not engine.exists():
     subprocess.run([
         'trtexec',
         f'--onnx={onnx}',
-        '--saveEngine=engines/yolov8n-fp16.engine',
+        '--saveEngine=engines/yolov11n-fp16.engine',
         '--fp16',
         '--workspace=2048'
     ], check=True)

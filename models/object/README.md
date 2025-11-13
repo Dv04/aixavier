@@ -1,6 +1,6 @@
 # YOLO Detector Assets
 
-Default detector: YOLOv8n (object/person generalist).
+Default detector: yolov11n (object/person generalist).
 
 - Input size: 640x640
 - Expected latency (FP16): ~8 ms per frame on Xavier AGX @ 45W

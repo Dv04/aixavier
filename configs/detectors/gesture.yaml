@@ -1,4 +1,4 @@
-model: yolov8_gesture
+model: yolov11_gesture
 engine_path: models/action/engines/x3d_s-fp16.engine
 precision: fp16
 input:

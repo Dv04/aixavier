@@ -233,10 +233,16 @@ class PoseDetector(BaseDetector):
         person_cfg = config.get("person_detector") or {}
         if person_cfg:
             self.person_detector = ObjectDetector(person_cfg)
-            class_filter = person_cfg.get("classes_filter") or person_cfg.get("classes") or ["person"]
+            class_filter = (
+                person_cfg.get("classes_filter")
+                or person_cfg.get("classes")
+                or ["person"]
+            )
             self.person_class_filter = {str(label).lower() for label in class_filter}
             self.person_min_conf = float(person_cfg.get("confidence_threshold", 0.4))
-            self.person_padding_ratio = float(person_cfg.get("crop_padding_ratio", 0.15))
+            self.person_padding_ratio = float(
+                person_cfg.get("crop_padding_ratio", 0.15)
+            )
         else:
             self.person_detector = None
             self.person_class_filter = set()
@@ -322,7 +328,9 @@ class PoseDetector(BaseDetector):
             boxes, scores, keypoints, boxes_are_xywh, pad, scale, offset=(0.0, 0.0)
         )
 
-    def _detect_from_person(self, image: np.ndarray, bbox: List[float]) -> List[Dict[str, Any]]:
+    def _detect_from_person(
+        self, image: np.ndarray, bbox: List[float]
+    ) -> List[Dict[str, Any]]:
         h, w = image.shape[:2]
         x1, y1, x2, y2 = [int(round(v)) for v in bbox]
         pad_x = int((x2 - x1) * self.person_padding_ratio)
@@ -348,7 +356,9 @@ class PoseDetector(BaseDetector):
             offset=(float(x1), float(y1)),
         )
 
-    def _prepare_blob(self, image: np.ndarray) -> Tuple[np.ndarray, float, Tuple[int, int]]:
+    def _prepare_blob(
+        self, image: np.ndarray
+    ) -> Tuple[np.ndarray, float, Tuple[int, int]]:
         img, scale, pad = letterbox(image, (self.input_w, self.input_h))
         blob = img.transpose(2, 0, 1).astype(np.float32) / 255.0
         blob = np.expand_dims(blob, 0)
@@ -431,7 +441,7 @@ class PoseDetector(BaseDetector):
             (center_x, center_y, 0.95),  # spine
             (center_x, center_y + torso_len / 2, 0.9),  # pelvis
         ]
-        # Fill to 17 keypoints as expected by YOLOv8 pose models
+        # Fill to 17 keypoints as expected by yolov11 pose models
         while len(keypoints) < 17:
             angle = (len(keypoints) - 4) * (math.pi / 6)
             radius = torso_len / 1.5

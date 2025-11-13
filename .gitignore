@@ -43,3 +43,5 @@ cache/
 *.pth
 pose_velocity_context.zip
 aixavier_full.zip
+models/object/onnx/yolo11n.pt
+pose_multiperson_ctx.zip

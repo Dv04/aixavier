@@ -1,2 +1,2 @@
-Ultralytics YOLOv8 is licensed under the GNU General Public License v3.0.
+Ultralytics yolov11 is licensed under the GNU General Public License v3.0.
 See https://github.com/ultralytics/ultralytics/blob/main/LICENSE for the full text.

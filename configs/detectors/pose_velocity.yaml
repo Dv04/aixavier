@@ -12,7 +12,7 @@ confidence_threshold: 0.25
 nms_iou_threshold: 0.6
 max_detections: 200
 person_detector:
-  onnx_path: models/object/onnx/yolov8n.onnx
+  onnx_path: models/object/onnx/yolo11n.onnx
   input:
     width: 640
     height: 640

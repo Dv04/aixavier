@@ -5,7 +5,7 @@ This directory is reserved for the deployable inference assets (TensorRT engines
 ```
 models/usecases/
   ├─ object_detection/
-  │    ├─ fp16/   # e.g., yolov8n.engine
+  │    ├─ fp16/   # e.g., yolov11n.engine
   │    └─ onnx/   # ONNX export
   ├─ pose/
   │    ├─ fp16/
