@@ -1,0 +1,681 @@
+📚 PROJECT DHI – COMPLETE CONTEXT SUMMARY (FOR FUTURE PROMPTS)
+
+You can copy everything below into a new chat for future prompt creation.
+
+PROJECT DHI – COMPLETE CONTEXT SUMMARY (FOR FUTURE PROMPTS)
+
+NOTE: “Project Dhi” is a working name for an edge-based safety analytics platform. It has previously also been referred to as “Aixavier Edge Analytics” in earlier drafts. The real commercial brand is TBD and should NOT be tied to any specific hardware vendor (e.g., Jetson/Xavier).
+
+ONE-LINER & VISION
+
+Project Dhi is an edge-native, use-case–first video analytics platform that turns existing CCTV cameras into real-time safety agents for high-risk, high-camera-density environments.
+
+We start with US wedge verticals:
+
+Transit / mobility (fleets, depots, rail/bus networks)
+
+Warehousing & logistics (distribution centers, 3PLs, e-commerce hubs)
+
+Over time the same engine extends to:
+
+Stadiums and arenas
+
+Airports and ports
+
+Large retail / malls / big-box formats
+
+Campuses, hospitals, universities
+
+Smart-city public spaces
+
+Core concept:
+
+Cameras and NVRs are already deployed everywhere, but they are mostly used as forensic tools “after the fact”.
+
+Project Dhi sits on the edge, next to those cameras, runs real-time analytics, and detects critical safety and operations events in seconds—not hours.
+
+PROBLEM STATEMENT
+
+Today’s physical safety systems are largely reactive:
+
+Incidents like worker falls, track trespass, vehicle–person conflicts, small fires, crowd surges, assaults or aggression are often noticed late.
+
+Discovery usually happens because someone calls it in, a complaint is made, or a claim hits the system.
+
+Investigation requires manual video review: safety managers or investigators scrub hours of CCTV footage.
+
+Constraints of current approaches:
+
+Cloud-only analytics:
+
+Practical issues: bandwidth limits in fleets, depots, remote yards, industrial sites; cost of streaming 24/7 video.
+
+Policy and privacy: unions, internal policies, regulations often disallow continuous offsite streaming of raw video.
+
+Latency: cloud round-trips are too slow for sub-second detection of critical events like person-down or restricted-zone intrusion.
+
+Built-in NVR/camera analytics:
+
+Very shallow features (motion detection, line-crossing, basic intrusion).
+
+High false-positive rates, little context, difficult to tune.
+
+Poor fit to real safety and operations workflows.
+
+Net result:
+
+The infrastructure (cameras, NVRs, VMS systems) already exists.
+
+But operationally, cameras remain “dumb recorders” instead of proactive safety systems, especially in high-risk sites where a single event can be catastrophic (injuries, deaths, high liability, shutdowns).
+
+SOLUTION OVERVIEW
+
+Project Dhi upgrades existing CCTV systems into live safety assets via an edge-native platform:
+
+Key ideas:
+
+Ingest video from existing infrastructure (RTSP, ONVIF, NVR/VMS outputs).
+
+Run a catalog of safety and operations “patterns” on an edge node:
+
+All heavy compute (ML inference, rule evaluation) runs on-site.
+
+Raw video normally does not leave the customer’s premises.
+
+Generate:
+
+Real-time alerts for operators, safety teams, and automated systems.
+
+Metrics and KPIs (incident rates, detection times, response times).
+
+Audit trails and visual evidence to support compliance and training.
+
+Design principles:
+
+Use-case–first: core IP is the pattern catalog + rules + KPIs + playbooks, not a specific chip or camera.
+
+Hardware-agnostic: runs on multiple edge compute backends.
+
+Edge-native: inference and decision-making close to the cameras, not in a distant cloud.
+
+CANONICAL PATTERN CATALOG (22 USE CASES → 8 PATTERNS)
+
+The system starts from roughly 22 specific safety use cases (originally railway-flavored) and abstracts them into 8 canonical detection patterns that span multiple verticals:
+
+Restricted-Zone Intrusion
+
+Definition: Person or object enters a pre-defined no-go zone.
+
+Examples:
+
+Transit: passenger steps into track area or platform “red zone”.
+
+Warehousing: worker enters forklift-only aisle or behind a reversing truck.
+
+Stadium: fan jumps barrier to pitch or side-stage area.
+
+Airport: individual enters staff-only corridor or airside zone.
+
+Retail/mall: customer walking through a staff-only door.
+
+Person-Down / Fall / Collapse
+
+Definition: Human falls or lies motionless in a concerning posture.
+
+Examples:
+
+Warehouse: worker collapses behind racks or off loading dock.
+
+Transit: passenger collapses on platform or inside bus/train.
+
+Stadium: fan collapses in concourse or seating area corridor.
+
+Retail: shopper falls in an aisle with no immediate witness.
+
+Campus/hospital: patient or staff member collapsed in hallway.
+
+Smoke / Fire / Environmental Anomalies
+
+Definition: Visible smoke, haze, or other environmental cues suggesting fire or hazardous conditions.
+
+Examples:
+
+Warehouse: smoke near battery racks, chemical storage, or racking.
+
+Stadium: concession-stand fire, bin fire under stands.
+
+Airport: small electrical fire in back-of-house storage.
+
+Industrial plant: smoke around equipment or control cabinets.
+
+Aggression / Violence / Fights
+
+Definition: Patterns of motion indicating physical fights or aggressive body language.
+
+Examples:
+
+Transit: altercations in railcars or station concourses.
+
+Stadium: fights among fans in stands or concourse.
+
+Retail: aggressive incidents near checkout or service desks.
+
+Public spaces: fights in outdoor plazas, bus stops.
+
+PPE & Staff Compliance / Presence
+
+Definition: Staff compliance with PPE requirements and presence rules (being in the right place at the right time).
+
+Examples:
+
+Warehouse: worker in restricted zone without hi-vis vest or helmet.
+
+Industrial: missing goggles in a high-risk area.
+
+Transit: staff not present at assigned boarding doors.
+
+Airport/port: staff in unsafe areas without appropriate gear.
+
+Vehicle–Person Conflict & Equipment Misuse
+
+Definition: Vehicles/machines operated outside safe envelopes or near pedestrians in dangerous ways.
+
+Examples:
+
+Logistics: forklifts speeding, turning with elevated loads, or driving where pedestrians are present.
+
+Ports/airports: tugs, yard trucks in areas with ground staff.
+
+Transit: train doors forced open, people hanging out of doors.
+
+Industrial: heavy equipment operating in zones reserved for people.
+
+Crowding, Queues, & Over-Capacity
+
+Definition: Density of people or length of queues exceeds safe or acceptable thresholds.
+
+Examples:
+
+Transit: overcrowded platforms, blocked escalators, long dwell times.
+
+Warehouse: dock congestion, staging area pile-ups affecting throughput and safety.
+
+Stadiums: crowd surges at gates, turnstiles, or concourses.
+
+Retail: excessively long queues in certain departments, blocked aisles.
+
+Airports: congested checkpoints.
+
+Unattended / Suspicious Objects
+
+Definition: Items left unattended for too long in sensitive areas.
+
+Examples:
+
+Transit: baggage left near stairs or platforms.
+
+Stadiums: bags left under seats or in concourse areas.
+
+Warehousing: pallets or boxes blocking emergency exits or fire doors.
+
+Airports: unattended bags in terminal areas.
+
+These patterns map many-to-many with the original 22 use cases. They enable cross-vertical reuse: same pattern, different zones, thresholds, semantics, and playbooks.
+
+PATTERN + RULES + KPIs + PLAYBOOK = IP
+
+The pattern catalog is more than a feature checklist:
+
+For each pattern:
+
+Detection graph:
+
+Which detector models are used.
+
+How they’re combined or sequenced.
+
+Rule templates:
+
+Zone definitions (geofences).
+
+Time-of-day and schedule constraints.
+
+Thresholds (duration, crowd density, etc.).
+
+Severity levels.
+
+KPIs:
+
+Incident rate per 10,000 hours of footage.
+
+Mean time to detect (MTTD).
+
+Mean time to respond (MTTR).
+
+Deployment playbooks:
+
+How to roll the pattern out at a given site type (e.g., large DC, rail platforms, stadium gates).
+
+How to tune thresholds and filters in the first weeks.
+
+How to integrate alerts into existing workflows (control room, radios, ticketing systems).
+
+This combination (pattern + rules + KPIs + playbooks) forms a major part of the defensible IP:
+
+It enables fast vertical expansion without re-implementing everything from scratch.
+
+It standardises deployments and supports system integrators and partners.
+
+ARCHITECTURE & HARDWARE
+
+High-level architecture:
+
+Cameras and NVR/VMS:
+
+Existing IP cameras (various OEMs).
+
+Existing NVRs or VMS platforms (Genetec, Milestone, Avigilon, etc.).
+
+We ingest video via standard protocols (RTSP/ONVIF, mirrored streams from NVR/VMS).
+
+Edge node:
+
+Runs in local rack, control room, back office, or on vehicle.
+
+Hardware options (multi-backend by design):
+
+NVIDIA edge devices (e.g., Xavier/Orin class).
+
+Industrial PCs (x86, with or without GPU).
+
+Future: NVRs or other x86 units that can run our container/agent.
+
+Select smart cameras / ARM SoCs where feasible.
+
+Responsibilities:
+
+Real-time inference on multiple camera streams (target ~4–16 streams/node).
+
+Rule evaluation (zones, schedules, thresholds).
+
+Local buffering and event logging.
+
+Degraded-mode operation when offline.
+
+Control-plane (cloud or central on-prem):
+
+Central configuration:
+
+Zones, patterns, rule templates per site.
+
+Fleet-wide rollout and updates.
+
+Fleet management:
+
+Node registration, health, versioning.
+
+Metrics and analytics:
+
+Aggregated KPIs per site, per pattern, per vertical.
+
+Integration hub:
+
+APIs/webhooks into VMS, incident ticketing, SOC tools.
+
+Role-based access control for operators, safety teams, execs.
+
+Data flows:
+
+Video stays on local networks between cameras and edge nodes.
+
+Edge nodes emit:
+
+Alerts and events (JSON or structured messages).
+
+Anonymised or short video clips (optional, configurable).
+
+Telemetry (CPU, memory, performance metrics).
+
+SECURITY & FIPS DIRECTION
+
+Security posture:
+
+Each edge node is treated as a critical asset:
+
+Secure boot and signed firmware/agent updates where the hardware supports it.
+
+Mutual TLS connections between nodes and control-plane.
+
+Configuration and secrets encrypted at rest.
+
+Defense-in-depth:
+
+Limited attack surface on edge nodes (minimal services).
+
+Strict roles and permissions on control-plane.
+
+Logging and audit trails for configuration changes and access.
+
+FIPS Level 3 direction:
+
+The platform is being designed with FIPS 140-3 Level 3 style expectations in mind, especially for:
+
+Cryptographic modules.
+
+Key storage and handling.
+
+Tamper resistance and tamper evidence in edge deployments.
+
+Objective:
+
+Not FIPS-certified at this moment, but architecture and implementation choices should make it feasible to obtain FIPS-class certifications in the future without major redesign.
+
+This allows serving regulated customers (transit agencies, utilities, critical infrastructure, federal projects) as the company matures.
+
+MARKET & WEDGE VERTICALS (US FOCUS)
+
+Geography:
+
+US-only focus for current modeling and go-to-market.
+
+Wedge verticals (initial 2–3 years):
+
+Transit / Mobility:
+
+Rail, metro, commuter rail, light rail, bus fleets, shuttle services.
+
+Use cases: track trespass, platform crowding, passenger collapse, aggression, suspicious objects, depot safety.
+
+Warehousing & Logistics:
+
+Distribution centers, 3PLs, e-commerce fulfillment hubs, cross-docks.
+
+Use cases: forklift/vehicle safety, dock and yard intrusion, PPE compliance, person-down, fire/smoke near storage.
+
+Expansion verticals (medium term):
+
+Stadiums and arenas.
+
+Airports and ports.
+
+Large retail / mall operators.
+
+Smart-city deployments for public spaces.
+
+Other high-risk industrial and critical infrastructure sites.
+
+Market structure:
+
+Dhi is an “edge safety intelligence layer” that sits next to existing cameras and VMS.
+
+It is not a cloud camera company and not a camera OEM.
+
+Competitors/alternatives:
+
+Traditional VMS + OEM analytics (broad but shallow).
+
+Cloud camera platforms (generic detection, cloud-first).
+
+Vertical safety-AI startups (deep but narrow, often single vertical).
+
+Status quo “do nothing” – manual review, minimal use of analytics.
+
+Differentiation:
+
+Edge-native, privacy- and bandwidth-aware.
+
+Use-case–first pattern catalog, cross-vertical, but anchored in wedge verticals where ROI is very strong.
+
+Designed for industrial and FIPS-grade deployments (security, reliability).
+
+Hardware-agnostic multi-backend architecture.
+
+BUSINESS MODEL & PRICING (WORKING ASSUMPTIONS)
+
+Pricing model (working assumption):
+
+Internal modeling assumption: ~$3,000 per node per year (ARR).
+
+Node ≈ logical edge runtime handling ~4–16 cameras.
+
+Alternative packaging options (to be validated):
+
+Per-site pricing (flat per store / per DC / per depot).
+
+Per-camera pricing (common in cloud camera platforms).
+
+Hybrid models:
+
+Node-based internally mapped to per-site or per-camera externally.
+
+COGS & gross margin (early estimates):
+
+Goal: ~75–80% gross margin at scale.
+
+COGS per node-year (ballpark):
+
+Cloud infra (control-plane, logs, metrics): ~$200–250.
+
+Support and monitoring (Tier 1/2, NOC): ~$300–350.
+
+Tooling, channel enablement, infra amortisation: ~$100–150.
+
+Total: ~$600–750 per node-year.
+
+With $3,000/node-year ARR → gross profit ≈ $2,250–2,400 / node-year (75–80% GM).
+
+These are early estimates to be refined after real pilots.
+
+Revenue scenarios (example, US-only, 5-year horizon, based on previous docs):
+
+Conservative (low case), Base (mid case), Aggressive (high case) node adoption and ARR trajectories.
+
+Not repeated in detail here; can be reconstructed as needed: ARR = nodes × $3k.
+
+For Launchpad application and early grant funding:
+
+A smaller, focused raise of ~$1.2M is assumed:
+
+25% hardware & testing infra.
+
+20% cloud infra & tooling.
+
+26% pilot deployment costs.
+
+12% legal/admin.
+
+18% contingency/buffer.
+
+Objective: bring product from strong demo to production pilots and early multi-site rollouts in US wedge verticals.
+
+ROADMAP & CURRENT STAGE
+
+Stage:
+
+Working prototype / pre-pilot.
+
+End-to-end pipeline implemented:
+
+Ingest from cameras/NVRs.
+
+Edge inference and rules engine.
+
+Alerts and metrics.
+
+~22 use cases mapped to 8 patterns.
+
+~16 of 22 patterns demo-ready on edge devices.
+
+Small internal lab with multiple camera types and network conditions.
+
+Runs on NVIDIA and industrial PC-class devices.
+
+No paying customers yet; next step = structured pilots.
+
+18-month roadmap:
+
+Phase 1 – Demo (Now):
+
+Mature internal demo across patterns.
+
+Show platform in action on representative hardware and camera setups.
+
+Phase 2 – P0 (Next 6–9 months):
+
+2–4 flagship pilots in warehousing/logistics.
+
+2–4 flagship pilots in transit/mobility.
+
+Each pilot:
+
+Multiple patterns deployed.
+
+Integration with customer VMS/NVR and workflows.
+
+Metrics collected (incident detection, investigation time, near-miss reduction).
+
+Begin lighthouse conversations for stadium/venue/airport verticals.
+
+Phase 3 – P1 (12–18 months):
+
+Convert successful pilots into multi-site rollouts:
+
+Multiple DCs for a 3PL.
+
+Multiple depots/lines for a transit agency.
+
+Codify deployment playbooks:
+
+Reference hardware SKUs.
+
+Standard VMS/NVR integration paths.
+
+Vertical-specific pattern bundles (“Warehouse Safety Pack”, “Rail Safety & Dwell Pack”).
+
+Target:
+
+Several paying, multi-site rollouts in wedges.
+
+Solid case studies & ROI evidence.
+
+Platform capable of managing hundreds to low-thousands of nodes.
+
+TEAM
+
+Core founding team (roles, not necessarily formal titles):
+
+Dev Sanghvi:
+
+Focus: architecture, deployments, business operations, GTM.
+
+Background: CCTV, cloud VMS, edge AI cameras, handling large-scale video systems (tens of thousands of streams, multi-PB storage).
+
+Ansh Dabral:
+
+Focus: edge runtime, control-plane, infrastructure, security.
+
+Owns: agent design, node management, secure update pipeline, telemetry, scalability.
+
+Madhuvani Thatiparti:
+
+Focus: ML / computer vision models and detection logic.
+
+Owns: pattern implementations, model optimisation for edge hardware, robustness and performance of detectors.
+
+Venkata Sai Aneesh Thatiparti:
+
+Focus: UI/UX, alerts, dashboards, operator workflows, integrations.
+
+Owns: SOC/operator interfaces, management consoles, visualisations, integration with existing tools.
+
+Future hires:
+
+Sales and business development for wedge verticals.
+
+Customer success / solutions engineers for deployments.
+
+Additional ML/engineering staff as product matures.
+
+LAUNCHPAD APPLICATION CONTEXT (Q&A SUMMARY)
+
+Why are you passionate about Project Dhi?
+
+Intersection of:
+
+Safety (real-world impact on injuries and public safety).
+
+Video systems (CCTV deployments and their current limitations).
+
+Practical AI (moving beyond lab demos to edge deployments).
+
+Desire to turn cameras from passive forensic tools into proactive safety agents.
+
+What problem does Project Dhi solve?
+
+Cameras are everywhere but safety is still reactive.
+
+Incidents in high-risk sites are:
+
+Detected late.
+
+Hard to reconstruct.
+
+Organizations face constraints:
+
+Bandwidth, cost, privacy, union agreements.
+
+Shallow built-in analytics.
+
+Dhi aims to use existing cameras + edge compute to deliver proactive, real-time safety detection.
+
+How will Dhi solve the problem?
+
+Edge-native video analytics platform.
+
+Catalog of safety patterns (8 canonical patterns, 22 use cases).
+
+Edge runtime on NVIDIA/industrial PCs (and future backends), running inference and rules on-site.
+
+Control-plane (cloud or central on-prem) for configuration, metrics, integrations.
+
+Security and architecture designed toward FIPS-grade expectations.
+
+What is the current stage?
+
+Working end-to-end prototype.
+
+Patterns defined, many demo-ready on edge hardware.
+
+Runs on multiple edge backends (NVIDIA, industrial PC).
+
+Internal lab; external pilots not yet started (pre-pilot stage).
+
+What do you hope to achieve with Launchpad’s support?
+
+Refine problem–solution fit and vertical focus via structured customer discovery.
+
+Design and run 2–4 serious pilots with real operators.
+
+Validate pricing/packaging and GTM strategy.
+
+Build a small founding team and advisory bench leveraging Rice and Liu Lab.
+
+Move from research-grade prototype to a credible, fundable pre-seed/seed-ready startup.
+
+KEY PHRASES & POSITIONING STATEMENTS
+
+Useful phrases for future prompts:
+
+“Edge-native safety intelligence layer on top of existing CCTV and VMS.”
+
+“Use-case–first, hardware-agnostic edge video analytics for high-risk environments.”
+
+“Pattern catalog + rules + KPIs + deployment playbooks is the core IP.”
+
+“Built toward FIPS Level 3–style security expectations for regulated sectors.”
+
+“Start with US fleets and logistics as wedge; expand into stadiums, airports, large retail, and smart-city zones.”
+
+“Turn cameras from forensic recorders into real-time safety agents.”
+
+END OF CONTEXT
