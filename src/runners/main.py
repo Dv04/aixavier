@@ -243,6 +243,17 @@ def run() -> None:
                 payload.setdefault("detector", detector.config.get("model", detector.__class__.__name__))
                 bus.publish(Event(type=detector.event_type, payload=payload))
 
+                # Emit derived pose events (e.g., collapse/gesture/phone) as first-class events
+                if detector.event_type == "pose":
+                    for evt in detection.get("pose_events", []) or []:
+                        derived = {
+                            **payload,
+                            **evt,
+                            "event_parent": "pose",
+                        }
+                        derived["type"] = evt.get("type", "pose.event")
+                        bus.publish(Event(type=derived.pop("type"), payload=derived))
+
             if SHOW_PREVIEW and vis_frame is not None:
                 cv2.imshow(PREVIEW_WINDOW, vis_frame)
                 if cv2.waitKey(1) & 0xFF == 27:

@@ -34,6 +34,7 @@ class RuleEngine:
         self.registry = UseCaseRegistry(manifest_path=manifest, configs_dir=self.configs_dir)
         self.usecases = self._load_usecases(self.configs_dir)
         self.state: Dict[str, Dict[str, float]] = {}
+        self.last_fire: Dict[str, float] = {}
 
     def _load_usecases(self, path: Path) -> Dict[str, UseCase]:
         raw_configs: Dict[str, Dict[str, object]] = {}
@@ -181,6 +182,106 @@ class RuleEngine:
                 },
             )
         return None
+
+    # --- Pose-derived events (UC8/13/20/22) ---
+    def _handle_pose_collapse(self, event: Dict[str, any], params: Dict[str, any], usecase: UseCase) -> Optional[Event]:
+        if event.get("type") != "pose.collapse":
+            return None
+        score = float(event.get("score", 0.0))
+        threshold = float(params.get("min_score", 0.65))
+        min_speed = float(params.get("min_speed_kmph", 0.0))
+        speed = float(event.get("speed_kmph", 0.0) or 0.0)
+        door_open = event.get("door_open")
+        # optional additional gates
+        a_mag = float(event.get("a_mag", 0.0))
+        prone_h = float(event.get("prone_height_px", float("inf")))
+        max_prone = float(params.get("max_prone_height_px", 240))
+        min_abs_accel = float(params.get("min_abs_accel", 1.2))
+        cooldown = float(params.get("cooldown_seconds", 3.0))
+        key = f"{usecase.metadata['id']}::{event.get('track_id')}"
+        if not self._cooldown_ok(key, cooldown):
+            return None
+        if speed < min_speed:
+            return None
+        if params.get("door_required") and door_open is False:
+            return None
+        if score >= threshold and abs(a_mag) >= min_abs_accel and prone_h <= max_prone:
+            self.last_fire[key] = time.time()
+            return Event(
+                type=usecase.metadata["id"],
+                payload={
+                    "camera_id": event.get("camera_id"),
+                    "track_id": event.get("track_id"),
+                    "score": score,
+                    "speed_kmph": speed,
+                    "door_open": door_open,
+                    "prone_height_px": prone_h,
+                    "a_mag": a_mag,
+                },
+            )
+        return None
+
+    def _handle_pose_gesture(self, event: Dict[str, any], params: Dict[str, any], usecase: UseCase) -> Optional[Event]:
+        if event.get("type") != "pose.gesture":
+            return None
+        label = event.get("label")
+        gestures = params.get("gestures", [])
+        min_conf = float(params.get("confidence_min", 0.6))
+        cooldown = float(params.get("cooldown_seconds", 2.0))
+        key = f"{usecase.metadata['id']}::{event.get('track_id')}::{label}"
+        if not self._cooldown_ok(key, cooldown):
+            return None
+        if label in gestures and float(event.get("score", 0.0)) >= min_conf:
+            self.last_fire[key] = time.time()
+            return Event(
+                type=usecase.metadata["id"],
+                payload={
+                    "camera_id": event.get("camera_id"),
+                    "track_id": event.get("track_id"),
+                    "label": label,
+                    "score": float(event.get("score", 0.0)),
+                    "delta_r": event.get("delta_r"),
+                    "delta_l": event.get("delta_l"),
+                },
+            )
+        return None
+
+    def _handle_pose_phone_usage(self, event: Dict[str, any], params: Dict[str, any], usecase: UseCase) -> Optional[Event]:
+        if event.get("type") != "pose.phone_usage":
+            return None
+        score = float(event.get("score", 0.0))
+        threshold = float(params.get("min_score", 0.6))
+        min_speed = float(params.get("min_speed_kmph", 0.0))
+        speed = float(event.get("speed_kmph", 0.0) or 0.0)
+        min_dwell = int(params.get("min_dwell_frames", 0))
+        dwell_frames = int(event.get("dwell_frames", 0))
+        cooldown = float(params.get("cooldown_seconds", 5.0))
+        key = f"{usecase.metadata['id']}::{event.get('track_id')}"
+        if not self._cooldown_ok(key, cooldown):
+            return None
+        if speed < min_speed:
+            return None
+        if score >= threshold and dwell_frames >= min_dwell:
+            self.last_fire[key] = time.time()
+            return Event(
+                type=usecase.metadata["id"],
+                payload={
+                    "camera_id": event.get("camera_id"),
+                    "track_id": event.get("track_id"),
+                    "score": score,
+                    "speed_kmph": speed,
+                    "dwell_frames": dwell_frames,
+                },
+            )
+        return None
+
+    # --- helpers ---
+    def _cooldown_ok(self, key: str, cooldown_s: float) -> bool:
+        last = self.last_fire.get(key, 0.0)
+        now = time.time()
+        if now - last < cooldown_s:
+            return False
+        return True
 
     def _handle_frs_match(self, event: Dict[str, any], params: Dict[str, any], usecase: UseCase) -> Optional[Event]:
         if event.get("type") != "frs":

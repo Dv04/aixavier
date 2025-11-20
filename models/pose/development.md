@@ -1,6 +1,12 @@
-# Pose Detection – Implementation Notes
+# Pose Detection – Implementation Notes (consolidated)
 
-This document captures every code/documentation touchpoint that was involved in turning the pose detection pipeline into something runnable (even if the model assets are still placeholders awaiting your calibrated exports).
+This file has been consolidated into `models/pose/README.md` (what exists) and `models/pose/TODO.md` (what's still missing). Keep those two up to date; this stub can be deleted once you're comfortable with the new locations.
+
+For historical reference, the key components remain:
+- configs/detectors/pose_velocity.yaml (pose profile)
+- src/runners/detectors.py (pose inference + SimCC decode)
+- src/runners/main.py and src/runners/pose_assoc.py (orchestration + association)
+- tests/test_pose_assoc.py and tracker-related tests
 
 ## Files touched for pose detection
 
@@ -17,7 +23,7 @@ This document captures every code/documentation touchpoint that was involved in 
 | `models/pose/TODO.md`                                                            | Tracks the outstanding pose work: SimCC decoder, engine exports, calibration datasets, validation, ByteTrack + ReID follow-ups.                                                                                    |
 | `models/usecases/README.md`                                                      | Defines the shared layout for staging deployable engines/ONNX exports (pose folder included).                                                                                                                      |
 | `docs/IMPLEMENTATION_STATUS.md`                                                  | High-level status table noting that pose detection is demo-ready with ONNX/TRT fallback but still needs proper decoding + calibration.                                                                             |
-| `docs/next_steps.md`                                                             | Roadmap entry and test matrix updates describing the pose pipeline, tracker state, webcam smoke-test instructions, and remaining blockers.                                                                         |
+| `docs/status.md`                                                                 | Roadmap entry and test matrix updates describing the pose pipeline, tracker state, webcam smoke-test instructions, and remaining blockers.                                                                         |
 | `README.md`                                                                      | User-facing instructions: how to run pose/object detectors locally (webcam), where to place ONNX/TRT assets, tracker configuration knobs, and overall architecture notes.                                          |
 | `tests/test_pose_assoc.py`                                                       | Exercises the pose-to-person association helper to ensure matching logic behaves as expected.                                                                                                                      |
 | `tests/test_tracker.py`, `tests/test_tracker_manager.py`                         | Cover ByteTrack-lite + TrackerManager behaviours that pose detection relies on (persistent IDs, matching).                                                                                                         |

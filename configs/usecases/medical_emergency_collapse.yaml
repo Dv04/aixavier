@@ -8,13 +8,13 @@ detector: pose_velocity
 tracker: bytetrack
 interval: 3
 rules:
-  - type: pose_velocity_drop
-    min_drop: 1.8
-    window_seconds: 1.2
-    followup_dwell_seconds: 4
-  - type: prone_dwell
-    min_duration_seconds: 5
-    max_height_px: 220
+  - type: pose_collapse
+    min_score: 0.65
+    min_speed_kmph: 0
+    door_required: false
+    max_prone_height_px: 240
+    min_abs_accel: 1.2
+    cooldown_seconds: 3
 notifications:
   mqtt_topic: "{{MQTT_BROKER_URL}}/coach/medical"
   clip:

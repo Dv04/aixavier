@@ -1,5 +1,7 @@
 # Face Detection & Recognition Assets
 
+_Status: 2025-11-20 — runtime still uses simulated events; stage SCRFD + ArcFace ONNX/TRT exports here before switching the compose profile to real inference. Track gaps in `models/face/TODO.md`._
+
 Default stack: SCRFD-500M (detector) + MobileFaceNet ArcFace head.
 - Input size: 320x320 detector, 112x112 embedding
 - Latency (FP16): ~6 ms detector + ~2 ms embedding on Xavier AGX

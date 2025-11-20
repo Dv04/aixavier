@@ -1,4 +1,4 @@
-# TODO: Face Detection & ReID Integration – November 2025
+# TODO: Face Detection & ReID Integration – updated 2025-11-20
 
 This file tracks all missing components and integration points required to move the face detection and person re-identification (ReID) pipeline from stub/demo to production-ready.
 
@@ -97,7 +97,7 @@ This file tracks all missing components and integration points required to move 
 - [ ] Add CI checks for model presence and runtime health.
 
 ## 6. Documentation & Hygiene
-- [ ] Update `docs/IMPLEMENTATION_STATUS.md` and `docs/next_steps.md` with progress and integration notes.
+- [ ] Update `docs/status.md` with progress and integration notes.
 - [ ] Ensure all secrets and placeholders are resolved/documented in `docs/placeholders.md`.
 
 ---

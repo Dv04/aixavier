@@ -1,4 +1,4 @@
-# Object Detection TODO
+# Object Detection TODO (updated 2025-11-20)
 
 ## Owner: You
 - Fine-tune or select production weights that include PPE/rail-specific classes and export ONNX/TRT models.

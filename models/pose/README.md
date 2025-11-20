@@ -1,5 +1,7 @@
 # Pose Estimation Assets
 
+_Status: 2025-11-20 — RTMPose ONNX decoding (SimCC) is implemented in the runner; production TRT engines still need to be staged under `models/usecases/pose/` and referenced from `configs/detectors/pose_velocity.yaml`._
+
 Default: yolov11 Pose or RTMPose (see `models/usecases/pose/`).
 - Input: 256x192 (RTMPose tiny) or 640x640 (yolov11 Pose)
 - Latency FP16: ~11 ms per frame on Xavier AGX (yolov11n pose)

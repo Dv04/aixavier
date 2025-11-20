@@ -76,6 +76,7 @@ class PoseUseCaseMonitor:
 
     def process(self, camera_id: str, detections: List[Dict[str, Any]], fps_hint: float | None = None) -> None:
         fps = fps_hint or self.fps_hint
+        telemetry = self.telemetry.snapshot()
         for det in detections:
             keypoints = det.get("keypoints")
             track_id = det.get("track_id")
@@ -84,24 +85,53 @@ class PoseUseCaseMonitor:
             kp_array = np.asarray(keypoints, dtype=np.float32)
             features = self._update_track_state(track_id, kp_array, fps)
             events: List[Dict[str, Any]] = []
+            latest = features[-1] if features else {}
 
-            if len(features) >= 3:
+            if len(features) >= 1:
                 collapse_score = self.collapse.score(features[-15:])
                 if collapse_score >= self.collapse_threshold:
-                    events.append({"type": "pose.collapse", "score": collapse_score})
+                    events.append({
+                        "type": "pose.collapse",
+                        "score": collapse_score,
+                        "speed_kmph": telemetry.get("speed_kmph"),
+                        "door_open": telemetry.get("door_open"),
+                        "v_mag": latest.get("v_mag"),
+                        "a_mag": latest.get("a_mag"),
+                        "prone_height_px": latest.get("prone_height_px"),
+                    })
                     self._record_event("collapse", f"COLLAPSE {collapse_score:.2f}", track_id)
 
             label, gesture_score = self.gesture.predict(kp_array)
             min_score = self.gesture_thresholds.get(label, self.default_gesture_threshold)
             if label != "unknown" and gesture_score >= min_score:
-                events.append({"type": "pose.gesture", "label": label, "score": gesture_score})
+                delta_r = float(self._y_delta(kp_array, 10, 6))
+                delta_l = float(self._y_delta(kp_array, 9, 5))
+                events.append({
+                    "type": "pose.gesture",
+                    "label": label,
+                    "score": gesture_score,
+                    "speed_kmph": telemetry.get("speed_kmph"),
+                    "delta_r": delta_r,
+                    "delta_l": delta_l,
+                })
                 self._record_event("gesture", label.upper(), track_id)
 
             phone_score, active = self.phone.score(kp_array)
             if active and phone_score >= self.phone_usage_threshold:
                 if self._speed_ok():
-                    events.append({"type": "pose.phone_usage", "score": phone_score})
-                    self._record_event("phone", "PHONE-USAGE", track_id)
+                    if not self._phone_already_active(track_id):
+                        events.append({
+                            "type": "pose.phone_usage",
+                            "score": phone_score,
+                            "speed_kmph": telemetry.get("speed_kmph"),
+                            "dwell_frames": self.phone.last_dwell_frames,
+                        })
+                        self._record_event("phone", "PHONE-USAGE", track_id)
+                    self._set_phone_active(track_id, True)
+                else:
+                    self._set_phone_active(track_id, False)
+            elif active is False:
+                self._set_phone_active(track_id, False)
 
             if events:
                 det.setdefault("pose_events", []).extend(events)
@@ -149,6 +179,14 @@ class PoseUseCaseMonitor:
         state["velocity"] = velocity
         return list(history)
 
+    def _phone_already_active(self, track_id: int) -> bool:
+        state = self.track_state.setdefault(track_id, {"history": deque(maxlen=120)})
+        return bool(state.get("phone_active"))
+
+    def _set_phone_active(self, track_id: int, active: bool) -> None:
+        state = self.track_state.setdefault(track_id, {"history": deque(maxlen=120)})
+        state["phone_active"] = active
+
     @staticmethod
     def _midhip(keypoints: np.ndarray) -> np.ndarray:
         try:
@@ -164,6 +202,13 @@ class PoseUseCaseMonitor:
             return abs(head_y - midhip_y) * 2.0
         except Exception:  # pragma: no cover - fallback height
             return 400.0
+
+    @staticmethod
+    def _y_delta(keypoints: np.ndarray, idx_a: int, idx_b: int) -> float:
+        try:
+            return float(keypoints[idx_a][1] - keypoints[idx_b][1])
+        except Exception:  # pragma: no cover
+            return 0.0
 
     def _record_event(self, kind: str, label: str, track_id: Optional[int] = None) -> None:
         self.event_counts[kind] += 1

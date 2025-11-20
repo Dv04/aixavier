@@ -7,6 +7,9 @@ usecases:
   - unattended_baggage
   - human_aggression_violence
   - medical_emergency_collapse
+  - passenger_falling_from_door
+  - hand_gesture_signal_identification
+  - mobile_phone_usage_detection
   - trespassing_on_track
   - face_recognition
 interval_overrides:
@@ -16,5 +19,8 @@ interval_overrides:
   unattended_baggage: 2
   human_aggression_violence: 3
   medical_emergency_collapse: 3
+  passenger_falling_from_door: 3
+  hand_gesture_signal_identification: 3
+  mobile_phone_usage_detection: 3
   trespassing_on_track: 1
   face_recognition: 2

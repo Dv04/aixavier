@@ -8,10 +8,10 @@ detector: gesture
 tracker: bytetrack
 interval: 2
 rules:
-  - type: gesture_match
-    gestures: ["halt","move","reverse","emergency"]
+  - type: pose_gesture
+    gestures: ["halt","proceed","reverse","caution"]
     confidence_min: 0.6
-    sample_rate_hz: 5
+    cooldown_seconds: 2
 notifications:
   mqtt_topic: "{{MQTT_BROKER_URL}}/loco/hand_gesture"
   clip:

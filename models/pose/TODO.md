@@ -1,4 +1,4 @@
-# Pose & Velocity Delivery Plan (Use Cases 8, 13, 20, 22)
+# Pose & Velocity Delivery Plan (Use Cases 8, 13, 20, 22) — updated 2025-11-20
 
 The pose stack underpins four railway analytics workloads:
 - **UC8 – Medical emergency detection (collapse velocity)**
@@ -114,7 +114,7 @@ Across all four use cases, remember to:
 
 8. **Deployment readiness**
    - Ensure TRT engines and configs are staged under `models/usecases/<slug>/` with checksums.
-   - Update `docs/next_steps.md` to move the four use cases from P0 backlog to “demo-ready”.
+  - Update `docs/status.md` to move the four use cases from P0 backlog to “demo-ready”.
    - Append a `HANDOFF.md` entry summarizing the implementation.
 
 Following this plan keeps the pose group aligned with the rest of the repo (absolute imports, UseCaseRegistry metadata, shared telemetry). No further TODO items outside these sections should be needed; update this file whenever scope changes.

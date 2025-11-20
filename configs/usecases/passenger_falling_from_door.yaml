@@ -11,14 +11,13 @@ lines:
   - id: door_edge
     points: [[200,540],[1720,540]]
 rules:
-  - type: line_crossing
-    line_id: door_edge
-    classes: ["person"]
-    direction: outward
-    velocity_min: 1.5
-  - type: prone_dwell
-    min_duration_seconds: 3
-    max_height_px: 180
+  - type: pose_collapse
+    min_score: 0.60
+    min_speed_kmph: 0
+    door_required: false
+    max_prone_height_px: 220
+    min_abs_accel: 1.5
+    cooldown_seconds: 2
 notifications:
   mqtt_topic: "{{MQTT_BROKER_URL}}/common/fall"
   clip:

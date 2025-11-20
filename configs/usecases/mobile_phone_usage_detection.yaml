@@ -4,15 +4,15 @@ metadata:
   severity: high
   frequency: real-time + post
   domains: ["Loco"]
-detector: yolo_v8n
+detector: pose_velocity
 tracker: bytetrack
-interval: 2
+interval: 3
 rules:
-  - type: class_presence
-    classes: ["mobile_phone"]
-    confidence_min: 0.45
-  - type: hand_to_face
-    dwell_seconds: 2
+  - type: pose_phone_usage
+    min_score: 0.6
+    min_speed_kmph: 0
+    min_dwell_frames: 6
+    cooldown_seconds: 5
 notifications:
   mqtt_topic: "{{MQTT_BROKER_URL}}/loco/mobile_phone"
   clip:

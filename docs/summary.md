@@ -48,6 +48,12 @@
 
 ## 1. Positioning & Scope (Use-Case–First, Wedge Verticals)
 
+### Legacy Naming & Vision ("Project Dhi")
+- Historical codename: **Project Dhi** (formerly “Aixavier”); final commercial brand is intentionally hardware-agnostic.
+- Core vision: edge-native, use-case–first analytics that turns existing CCTV into proactive safety/ops signals across transit + warehousing first, then stadiums/airports/retail/campuses.
+- Rationale: avoid cloud bandwidth/latency/privacy constraints; run close to cameras; value sits in patterns/rules/playbooks rather than hardware.
+- Keep this note so deleting the old `context.txt` doesn’t drop brand/vision history.
+
 ### 1.1 What Aixavier Is
 
 **Aixavier Edge Analytics** is a **use-case–driven edge video analytics platform** that runs on multiple edge compute backends and turns raw CCTV streams into **actionable safety, security, and operations signals**.

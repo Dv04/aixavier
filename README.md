@@ -157,7 +157,7 @@ When satisfied, drop the `--dry-run` flag to persist updates.
 ## Governance & Next Steps
 - Follow Conventional Commits and keep subject lines ≤72 characters.
 - CI (see `.github/workflows/agent-ci.yml`) runs lint, tests, placeholder checks, and secret scanning.
-- Record any roadmap items in [`docs/next_steps.md`](docs/next_steps.md) and [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md) rather than inline TODO comments.
+- Record any roadmap items in [`docs/status.md`](docs/status.md) rather than inline TODO comments.
 - The next structural milestone is migrating runtime modules under `src/aixavier/` per [`AGENTS.md`](AGENTS.md).
 
 ## Live Auto Sections
