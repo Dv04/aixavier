@@ -2305,3 +2305,73 @@ This roadmap ensures the model in this memo becomes **tighter and more evidence-
 ## Agent PR Conflicts
 - Agent operates on branch `agent/update-YYYYMMDD`. If manual edits conflict, mark file sections inside `<!-- manual -->` blocks.
 
+
+
+
+
+
+Got you. You can run the whole project locally on your Mac end-to-end. Here’s the exact checklist.
+ 
+Prereqs
+•
+Node.js 20+ (recommended) and pnpm
+•
+A Resend API key (free) if you want the contact form to actually send emails
+ 
+Install pnpm
+•
+If you don’t have it: npm i -g pnpm
+ 
+Clone and install
+•
+git clone <your-repo-url>
+•
+cd <repo-folder>
+•
+pnpm install
+ 
+Start Convex (backend)
+•
+In Terminal tab A: npx convex dev
+•
+First run provisions a dev deployment and writes .env.local with CONVEX_URL
+•
+Keep this process running while you develop
+ 
+Set frontend env var for Convex
+•
+Open .env.local (created by Convex) and add:
+•
+VITE_CONVEX_URL=<the CONVEX_URL value from above>
+•
+Example: if .env.local has CONVEX_URL="https://xxxx.convex.cloud", then set VITE_CONVEX_URL=https://xxxx.convex.cloud
+ 
+Enable emails (optional but required for the contact form to succeed)
+•
+Add to .env.local:
+•
+RESEND_API_KEY=your_resend_api_key
+•
+If you skip this, the contact action will fail when it tries to send emails
+ 
+Run the web app
+•
+In Terminal tab B: pnpm dev
+•
+Open http://localhost:5173
+ 
+Build and preview (optional)
+•
+pnpm build
+•
+pnpm preview
+•
+Open the URL shown (usually http://localhost:4173)
+ 
+Notes and tips
+•
+Keep npx convex dev running while you use the app; it powers the backend.
+•
+The contact form writes to the database and sends 2 emails (to the submitter and to dev04san@gmail.com). Without RESEND_API_KEY, submission will fail.
+•
+If you only want to test the UI locally without email sending, set a valid RESEND_API_KEY or let me know and I can add a “dev mode” switch to bypass emails.
